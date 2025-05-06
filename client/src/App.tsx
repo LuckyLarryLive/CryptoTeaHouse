@@ -10,7 +10,7 @@ import Tokenomics from "@/pages/Tokenomics";
 import Roadmap from "@/pages/Roadmap";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { useWallet } from "@/contexts/WalletContext";
+import { useWallet, WalletContextProvider } from "@/contexts/WalletContext";
 
 function Router() {
   const { connected } = useWallet();
@@ -36,10 +36,12 @@ function Router() {
 
 function App() {
   return (
-    <TooltipProvider>
-      <Toaster />
-      <Router />
-    </TooltipProvider>
+    <WalletContextProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    </WalletContextProvider>
   );
 }
 

@@ -14,23 +14,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Public key is required" });
       }
       
-      // Check if user exists
-      let user = await storage.getUserByPublicKey(publicKey);
+      // For now, just return a mock user object
+      const mockUser = {
+        id: 1,
+        publicKey: publicKey,
+        lastLoginAt: new Date(),
+        createdAt: new Date()
+      };
       
-      // Create user if doesn't exist
-      if (!user) {
-        try {
-          const userData = insertUserSchema.parse({ publicKey });
-          user = await storage.createUser(userData);
-        } catch (error) {
-          return res.status(400).json({ message: "Invalid user data" });
-        }
-      } else {
-        // Update last login time
-        user = await storage.updateUserLogin(user.id) || user;
-      }
-      
-      return res.status(200).json({ user });
+      return res.status(200).json({ user: mockUser });
     } catch (error) {
       console.error("Auth error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -46,16 +38,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user ID" });
       }
       
-      const ticketCounts = await storage.getTickets(userId);
+      // Return mock ticket counts
+      const mockTicketCounts = [
+        { type: "daily", count: 0 },
+        { type: "weekly", count: 0 },
+        { type: "monthly", count: 0 },
+        { type: "yearly", count: 0 }
+      ];
       
-      // Ensure we have all ticket types, even if count is 0
-      const ticketTypes = ["daily", "weekly", "monthly", "yearly"];
-      const fullTicketCounts = ticketTypes.map(type => {
-        const found = ticketCounts.find(t => t.type === type);
-        return found || { type, count: 0 };
-      });
-      
-      return res.status(200).json(fullTicketCounts);
+      return res.status(200).json(mockTicketCounts);
     } catch (error) {
       console.error("Get tickets error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -65,8 +56,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get upcoming draws
   app.get("/api/draws/upcoming", async (req: Request, res: Response) => {
     try {
-      const upcomingDraws = await storage.getNextDraws();
-      return res.status(200).json(upcomingDraws);
+      // Return mock upcoming draws
+      const mockUpcomingDraws = [
+        { type: "daily", drawTime: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+        { type: "weekly", drawTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+        { type: "monthly", drawTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
+      ];
+      
+      return res.status(200).json(mockUpcomingDraws);
     } catch (error) {
       console.error("Get upcoming draws error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -84,12 +81,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!["daily", "weekly", "monthly"].includes(pullType)) {
         return res.status(400).json({ message: "Invalid pull type" });
-      }
-      
-      // Check if user exists
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
       }
       
       // Random pull result - ticket or small SOL amount
@@ -117,29 +108,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       } else {
         // Return ticket for the appropriate draw
-        const ticketData = insertTicketSchema.parse({
-          userId,
-          type: pullType,
-          quantity: 1
-        });
-        
-        const ticketResult = await storage.createTicket(ticketData);
-        
         result.details = {
-          ticket: ticketResult,
+          ticket: {
+            id: Math.floor(Math.random() * 1000),
+            userId,
+            type: pullType,
+            quantity: 1,
+            createdAt: new Date()
+          },
           pullType,
           message: `You earned a ${pullType} ticket!`
         };
       }
-      
-      // Record activity
-      const activityData = insertActivitySchema.parse({
-        userId,
-        type: result.type,
-        details: result.details
-      });
-      
-      await storage.createActivity(activityData);
       
       return res.status(200).json(result);
     } catch (error) {
@@ -158,8 +138,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user ID" });
       }
       
-      const activities = await storage.getUserActivities(userId, limit);
-      return res.status(200).json(activities);
+      // Return mock activities
+      const mockActivities = [
+        {
+          id: 1,
+          userId,
+          type: "pull",
+          details: { message: "Pulled the lucky cat's arm!" },
+          createdAt: new Date()
+        }
+      ];
+      
+      return res.status(200).json(mockActivities);
     } catch (error) {
       console.error("Get activities error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -170,8 +160,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/winners", async (req: Request, res: Response) => {
     try {
       const limit = Number(req.query.limit) || 10;
-      const winners = await storage.getWinners(limit);
-      return res.status(200).json(winners);
+      
+      // Return mock winners
+      const mockWinners = [
+        {
+          id: 1,
+          userId: 1,
+          publicKey: "mockPublicKey",
+          drawId: 1,
+          drawType: "daily",
+          prize: "0.1",
+          createdAt: new Date(),
+          transactionSignature: null
+        }
+      ];
+      
+      return res.status(200).json(mockWinners);
     } catch (error) {
       console.error("Get winners error:", error);
       return res.status(500).json({ message: "Internal server error" });

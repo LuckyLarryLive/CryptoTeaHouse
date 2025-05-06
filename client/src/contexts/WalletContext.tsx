@@ -24,11 +24,23 @@ const WalletContext = createContext<WalletContextType>({
   user: null,
   connecting: false,
   isConnecting: false,
-  connect: async () => {},
-  disconnect: () => {},
-  signTransaction: async () => new Transaction(),
-  signAllTransactions: async () => [],
-  sendTransaction: async () => "",
+  connect: async (walletName?: string) => { 
+    console.error("[WalletContext] DEFAULT (EMPTY) connect function called. This should not happen if context is provided correctly. WalletName:", walletName);
+    throw new Error("Default context connect function was called - provider not found or not updated.");
+  },
+  disconnect: () => { console.error("[WalletContext] DEFAULT disconnect called."); },
+  signTransaction: async () => { 
+    console.error("[WalletContext] DEFAULT signTransaction called."); 
+    return new Transaction(); 
+  },
+  signAllTransactions: async () => { 
+    console.error("[WalletContext] DEFAULT signAllTransactions called."); 
+    return []; 
+  },
+  sendTransaction: async () => { 
+    console.error("[WalletContext] DEFAULT sendTransaction called."); 
+    return ""; 
+  },
 });
 
 // Hook to use the wallet context
@@ -94,56 +106,119 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
 
   // Connect to wallet
   const connect = async (walletName: string) => {
+    console.log(`[WalletContext] connect function called with: ${walletName}`);
     try {
       setIsConnecting(true);
+      console.log(`[WalletContext] setIsConnecting(true)`);
       
       let walletToConnect;
       
       // Handle different wallet providers
       if (walletName === "phantom") {
-        walletToConnect = (window as any).solana;
-        if (!walletToConnect) {
+        console.log("[WalletContext] Processing 'phantom' wallet...");
+        const phantom = (window as any).solana;
+        console.log("[WalletContext] Phantom provider object:", phantom);
+        console.log("[WalletContext] Phantom wallet check:", { 
+          exists: !!phantom, 
+          isPhantom: phantom?.isPhantom,
+          isConnected: phantom?.isConnected 
+        });
+        
+        if (!phantom) {
+          console.error("[WalletContext] Phantom provider (window.solana) not found.");
+          toast({
+            title: "Phantom Not Found",
+            description: "Please install the Phantom wallet extension first.",
+            variant: "destructive",
+          });
           window.open("https://phantom.app/", "_blank");
-          throw new Error("Phantom wallet not installed");
+          throw new Error("Phantom wallet not installed. Please install it first.");
         }
+        
+        if (!phantom.isPhantom) {
+          console.error("[WalletContext] window.solana is not Phantom. isPhantom flag is missing or false.");
+          toast({
+            title: "Invalid Wallet",
+            description: "Please make sure you have the official Phantom wallet installed.",
+            variant: "destructive",
+          });
+          throw new Error("Invalid Phantom wallet detected. Please install the official Phantom wallet.");
+        }
+        
+        walletToConnect = phantom;
+        console.log("[WalletContext] Assigned phantom to walletToConnect.");
       } else if (walletName === "solflare") {
-        walletToConnect = (window as any).solflare;
-        if (!walletToConnect) {
+        console.log("[WalletContext] Processing 'solflare' wallet...");
+        const solflare = (window as any).solflare;
+        console.log("[WalletContext] Solflare provider object:", solflare);
+        if (!solflare) {
+          console.error("[WalletContext] Solflare provider (window.solflare) not found.");
           window.open("https://solflare.com/", "_blank");
-          throw new Error("Solflare wallet not installed");
+          throw new Error("Solflare wallet not installed. Please install it first.");
         }
+        walletToConnect = solflare;
+        console.log("[WalletContext] Assigned solflare to walletToConnect.");
       } else {
+        console.error(`[WalletContext] Unsupported wallet: ${walletName}`);
         throw new Error("Unsupported wallet");
       }
       
       setWallet(walletToConnect);
+      console.log(`[WalletContext] Wallet provider set for ${walletName}`);
       
-      // Request connection to wallet
-      const { publicKey } = await walletToConnect.connect();
-      const publicKeyStr = publicKey.toString();
+      try {
+        console.log(`[WalletContext] Attempting walletToConnect.connect() for ${walletName}...`);
+        const resp = await walletToConnect.connect();
+        console.log(`[WalletContext] walletToConnect.connect() response for ${walletName}:`, resp);
+        
+        if (!resp || !resp.publicKey) {
+          console.error(`[WalletContext] Connection to ${walletName} failed or publicKey missing in response. Response:`, resp);
+          throw new Error(`Connection to ${walletName} failed or publicKey missing.`);
+        }
+
+        const publicKeyStr = resp.publicKey.toString();
+        console.log(`[WalletContext] Connected with public key: ${publicKeyStr}`);
+        
+        setPublicKey(publicKeyStr);
+        setConnected(true);
+        
+        console.log("[WalletContext] Attempting server authentication...");
+        await authenticateUser(publicKeyStr);
+        console.log("[WalletContext] Server authentication successful.");
+        
+        toast({
+          title: "Connected",
+          description: "Wallet connected successfully!",
+        });
+      } catch (err) {
+        console.error(`[WalletContext] Error during walletToConnect.connect() or post-connection for ${walletName}:`, err);
+        if (err instanceof Error && !err.message?.includes("User rejected")) {
+          toast({
+            title: "Connection Failed",
+            description: err.message || `Failed to connect to ${walletName}. Please try again.`,
+            variant: "destructive",
+          });
+        }
+        throw err;
+      }
       
-      setPublicKey(publicKeyStr);
-      setConnected(true);
-      
-      // Authenticate with server
-      await authenticateUser(publicKeyStr);
-      
-      toast({
-        title: "Connected",
-        description: "Wallet connected successfully!",
-      });
-      
+      console.log(`[WalletContext] connect function for ${walletName} finishing successfully.`);
       return;
     } catch (error: any) {
-      console.error("Connection error:", error);
-      toast({
-        title: "Connection Failed",
-        description: error.message || "Failed to connect to wallet",
-        variant: "destructive",
-      });
+      console.error(`[WalletContext] Outer catch block error for ${walletName}:`, error);
+      if (!error.message?.includes("User rejected") && 
+          !error.message?.includes("not installed") && 
+          !error.message?.includes("Invalid Phantom wallet")) {
+        toast({
+          title: "Connection Failed",
+          description: error.message || "Failed to connect to wallet",
+          variant: "destructive",
+        });
+      }
       throw error;
     } finally {
       setIsConnecting(false);
+      console.log(`[WalletContext] setIsConnecting(false) in finally block for ${walletName}`);
     }
   };
 
@@ -206,21 +281,24 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
     }
   };
 
+  const contextValue = {
+    connected,
+    publicKey,
+    user,
+    connecting,
+    isConnecting,
+    connect,
+    disconnect,
+    signTransaction,
+    signAllTransactions,
+    sendTransaction,
+  };
+
+  // Log the connect function being provided to the context
+  console.log("[WalletContext] PROVIDING context value. Connect function reference:", contextValue.connect);
+
   return (
-    <WalletContext.Provider
-      value={{
-        connected,
-        publicKey,
-        user,
-        connecting,
-        isConnecting,
-        connect,
-        disconnect,
-        signTransaction,
-        signAllTransactions,
-        sendTransaction,
-      }}
-    >
+    <WalletContext.Provider value={contextValue}>
       {children}
     </WalletContext.Provider>
   );

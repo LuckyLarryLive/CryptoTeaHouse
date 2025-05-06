@@ -198,14 +198,6 @@ export default function Home() {
                   Daily Draw
                 </div>
               </div>
-              <div className="mb-4">
-                <div className="text-sm text-light-300 mb-1">Prize</div>
-                <div className="text-2xl font-bold">0.5 SOL</div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-light-300">May 24, 2023</div>
-                <a href="#" className="text-primary text-sm hover:underline">View Transaction</a>
-              </div>
             </div>
             
             {/* Winner Card 2 */}
@@ -218,14 +210,6 @@ export default function Home() {
                 <div className="bg-secondary/20 text-secondary rounded-lg px-3 py-1 text-sm font-medium">
                   Weekly Draw
                 </div>
-              </div>
-              <div className="mb-4">
-                <div className="text-sm text-light-300 mb-1">Prize</div>
-                <div className="text-2xl font-bold">4.2 SOL</div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-light-300">May 21, 2023</div>
-                <a href="#" className="text-primary text-sm hover:underline">View Transaction</a>
               </div>
             </div>
             
@@ -240,14 +224,6 @@ export default function Home() {
                   Daily Draw
                 </div>
               </div>
-              <div className="mb-4">
-                <div className="text-sm text-light-300 mb-1">Prize</div>
-                <div className="text-2xl font-bold">0.8 SOL</div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-light-300">May 23, 2023</div>
-                <a href="#" className="text-primary text-sm hover:underline">View Transaction</a>
-              </div>
             </div>
             
             {/* Winner Card 4 */}
@@ -261,28 +237,21 @@ export default function Home() {
                   Monthly Draw
                 </div>
               </div>
-              <div className="mb-4">
-                <div className="text-sm text-light-300 mb-1">Prize</div>
-                <div className="text-2xl font-bold">15.0 SOL</div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-light-300">May 1, 2023</div>
-                <a href="#" className="text-primary text-sm hover:underline">View Transaction</a>
-              </div>
             </div>
           </div>
           
           <div className="text-center">
-            <Link href="/winners">
-              <a className="inline-block border border-primary/50 text-primary hover:bg-primary/10 font-medium px-6 py-3 rounded-lg">
-                View All Winners
-              </a>
+            <Link href="/winners" className="inline-block border border-primary/50 text-primary hover:bg-primary/10 font-medium px-6 py-3 rounded-lg">
+              View All Winners
             </Link>
           </div>
         </div>
       </section>
 
-      <WalletModal isOpen={walletModalOpen} onClose={() => setWalletModalOpen(false)} />
+      {/* Wallet Modal */}
+      {walletModalOpen && (
+        <WalletModal isOpen={walletModalOpen} onClose={() => setWalletModalOpen(false)} />
+      )}
     </div>
   );
 }
