@@ -29,7 +29,7 @@ export default function Home() {
                 <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   Sip, Pull, Prosper
                 </span>
-                — Try Your Luck at the Crypto Tea House
+                — Unveil Your Fortunes at the Crypto Tea House
               </h1>
               <p className="text-xl text-light-300 leading-relaxed">
                 Use your wallet to pull lucky fortunes, win crypto, and discover alpha.
@@ -141,7 +141,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">How It Works</h2>
             <p className="text-xl text-light-300 max-w-3xl mx-auto">
-              Discover fortune and prosperity in the world of crypto with our unique luck-based experience.
+              Discover favor and prosperity in the world of crypto and support the community in the same unique experience.
             </p>
           </div>
           

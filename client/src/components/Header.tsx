@@ -17,6 +17,7 @@ export default function Header() {
     { name: "How it Works", path: "/how-it-works" },
     { name: "Tokenomics", path: "/tokenomics" },
     { name: "Roadmap", path: "/roadmap" },
+    { name: "Legal", path: "/legal" },
   ];
   
   const isActive = (path: string) => {

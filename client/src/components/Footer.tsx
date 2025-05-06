@@ -1,6 +1,26 @@
 import { Link } from "wouter";
+import { useLocation } from "wouter";
 
 export default function Footer() {
+  const [location] = useLocation();
+
+  const handleLegalLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, section: string) => {
+    // If we're already on the legal page, prevent default navigation
+    if (location === "/legal") {
+      e.preventDefault();
+      const element = document.getElementById(section);
+      if (element) {
+        const headerOffset = 80;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: "smooth"
+        });
+      }
+    }
+  };
+
   return (
     <footer className="bg-dark-900 border-t border-dark-700 py-12">
       <div className="container mx-auto px-4">
@@ -66,10 +86,26 @@ export default function Footer() {
             <div>
               <h4 className="text-lg font-bold mb-4">Legal</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-light-300 hover:text-primary transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="text-light-300 hover:text-primary transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="text-light-300 hover:text-primary transition-colors">Cookies</a></li>
-                <li><a href="#" className="text-light-300 hover:text-primary transition-colors">Disclaimer</a></li>
+                <li>
+                  <Link href="/legal#terms" className="text-light-300 hover:text-primary transition-colors" onClick={(e) => handleLegalLinkClick(e, "terms")}>
+                    Terms and Agreements
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal#privacy" className="text-light-300 hover:text-primary transition-colors" onClick={(e) => handleLegalLinkClick(e, "privacy")}>
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal#cookies" className="text-light-300 hover:text-primary transition-colors" onClick={(e) => handleLegalLinkClick(e, "cookies")}>
+                    Cookies
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal#disclaimers" className="text-light-300 hover:text-primary transition-colors" onClick={(e) => handleLegalLinkClick(e, "disclaimers")}>
+                    Disclaimers
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

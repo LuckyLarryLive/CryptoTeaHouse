@@ -86,7 +86,7 @@ export default function HowItWorks() {
           >
             <h1 className="text-4xl md:text-5xl font-bold mb-6">How It Works</h1>
             <p className="text-xl text-light-300 max-w-3xl mx-auto">
-              Discover fortune and prosperity in the world of crypto with our unique luck-based experience.
+              Discover favor and prosperity in the world of crypto and support the community in the same unique experience.
               Here's your guide to participating in the Crypto Tea House.
             </p>
           </motion.div>

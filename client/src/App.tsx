@@ -8,6 +8,7 @@ import Winners from "@/pages/Winners";
 import HowItWorks from "@/pages/HowItWorks";
 import Tokenomics from "@/pages/Tokenomics";
 import Roadmap from "@/pages/Roadmap";
+import Legal from "@/pages/Legal";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useWallet, WalletContextProvider } from "@/contexts/WalletContext";
@@ -27,6 +28,7 @@ function Router() {
         <Route path="/how-it-works" component={HowItWorks} />
         <Route path="/tokenomics" component={Tokenomics} />
         <Route path="/roadmap" component={Roadmap} />
+        <Route path="/legal" component={Legal} />
         <Route component={NotFound} />
       </Switch>
       <Footer />

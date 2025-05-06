@@ -138,10 +138,24 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
             </Button>
           </div>
           
-          <div className="mt-6 pt-6 border-t border-dark-700">
-            <div className="text-sm text-light-300 text-center">
-              By connecting your wallet, you agree to our <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
-            </div>
+          <div className="text-sm text-light-300 text-center mt-4">
+            By connecting your wallet, you agree to our{" "}
+            <Link href="/legal#terms" className="text-primary hover:underline">
+              Terms and Agreements
+            </Link>
+            ,{" "}
+            <Link href="/legal#privacy" className="text-primary hover:underline">
+              Privacy Policy
+            </Link>
+            ,{" "}
+            <Link href="/legal#cookies" className="text-primary hover:underline">
+              Cookies
+            </Link>
+            , and{" "}
+            <Link href="/legal#disclaimers" className="text-primary hover:underline">
+              Disclaimers
+            </Link>
+            .
           </div>
         </DialogContent>
       </DialogPortal>
