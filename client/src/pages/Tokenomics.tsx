@@ -1,8 +1,77 @@
 import { motion } from "framer-motion";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 }
+};
+
+// Helper function to convert our color names to actual hex colors
+const getColorForPieChart = (color: string): string => {
+  switch (color) {
+    case "primary":
+      return "#D6001C"; // Primary red for Tea House
+    case "secondary":
+      return "#8B4513"; // Brown
+    case "accent":
+      return "#AA8133"; // Golden brown
+    case "blue-500":
+      return "#3B82F6"; // Blue
+    case "amber-500":
+      return "#F8D56F"; // Amber/gold
+    default:
+      return "#D6001C";
+  }
+};
+
+// Pie Chart Component
+interface PieChartDistributionProps {
+  data: Array<{
+    name: string;
+    percentage: number;
+    color: string;
+    tooltip?: string;
+  }>;
+}
+
+const PieChartDistribution = ({ data }: PieChartDistributionProps) => {
+  const chartData = data.map(item => ({
+    name: item.name,
+    value: item.percentage,
+    color: item.color
+  }));
+
+  return (
+    <ResponsiveContainer width={300} height={300}>
+      <PieChart>
+        <Pie
+          data={chartData}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          outerRadius={120}
+          innerRadius={40}
+          fill="#8884d8"
+          dataKey="value"
+        >
+          {chartData.map((entry, index) => (
+            <Cell 
+              key={`cell-${index}`} 
+              fill={getColorForPieChart(entry.color)}
+            />
+          ))}
+        </Pie>
+        <Tooltip 
+          formatter={(value: number) => `${value}%`}
+          contentStyle={{ 
+            backgroundColor: '#1a1a1a', 
+            borderColor: '#333333',
+            color: '#ffffff' 
+          }}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  );
 };
 
 export default function Tokenomics() {
@@ -112,22 +181,28 @@ export default function Tokenomics() {
                 Distribution Breakdown
               </h3>
               
-              <div className="space-y-6">
-                {tokenDistribution.map((item, index) => (
-                  <div key={index} className="bg-dark-700 rounded-xl p-6 group relative">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="font-medium">{item.name}</span>
-                      <span className="font-bold">{item.percentage}%</span>
+              <div className="bg-dark-700 rounded-xl p-6">
+                <div className="flex justify-center mb-8">
+                  <PieChartDistribution data={tokenDistribution} />
+                </div>
+                
+                <div className="space-y-4">
+                  {tokenDistribution.map((item, index) => (
+                    <div key={index} className="flex items-center group relative cursor-pointer">
+                      <div className={`w-4 h-4 mr-3 rounded-sm`} style={{ 
+                        backgroundColor: getColorForPieChart(item.color) 
+                      }}></div>
+                      <div className="flex justify-between w-full">
+                        <span className="font-medium">{item.name}</span>
+                        <span className="font-bold">{item.percentage}%</span>
+                      </div>
+                      {/* Tooltip */}
+                      <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-dark-900/95 text-sm p-3 rounded-md shadow-lg top-0 left-full ml-2 z-10 w-64 border border-dark-700">
+                        {item.tooltip}
+                      </div>
                     </div>
-                    <div className="w-full bg-dark-900 rounded-full h-4">
-                      <div className={`bg-${item.color} h-4 rounded-full`} style={{ width: `${item.percentage}%` }}></div>
-                    </div>
-                    {/* Tooltip */}
-                    <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-dark-900/95 text-sm p-3 rounded-md shadow-lg -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full z-10 w-64 border border-dark-700">
-                      {item.tooltip}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </motion.div>
             
