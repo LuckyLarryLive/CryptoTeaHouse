@@ -68,10 +68,26 @@ const PieChartDistribution = ({ data }: PieChartDistributionProps) => {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="custom-tooltip bg-dark-500/90 p-3 rounded-md border border-primary/30 shadow-lg">
-          <p className="font-bold text-white">{payload[0].payload.name}</p>
-          <p className="text-white">{payload[0].value}%</p>
-          <p className="text-light-200 text-sm mt-1">{payload[0].payload.tooltip}</p>
+        <div style={{ 
+          backgroundColor: '#777777', 
+          padding: '12px', 
+          borderRadius: '8px', 
+          border: '1px solid #D6001C',
+          boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+        }}>
+          <p style={{ 
+            fontWeight: 'bold', 
+            color: 'white', 
+            marginBottom: '4px' 
+          }}>{payload[0].payload.name}</p>
+          <p style={{ 
+            color: 'white', 
+            marginBottom: '6px' 
+          }}>{payload[0].value}%</p>
+          <p style={{ 
+            color: 'white', 
+            fontSize: '0.9rem' 
+          }}>{payload[0].payload.tooltip}</p>
         </div>
       );
     }
