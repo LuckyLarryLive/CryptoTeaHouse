@@ -87,7 +87,7 @@ const PieChartDistribution = ({ data }: PieChartDistributionProps) => {
         <Tooltip 
           formatter={(value: number) => `${value}%`}
           contentStyle={{ 
-            backgroundColor: '#444444', 
+            backgroundColor: '#666666', 
             borderColor: '#D6001C',
             color: '#ffffff',
             fontWeight: 'bold',
@@ -105,7 +105,7 @@ export default function Tokenomics() {
     { name: "Player Prize Pool", percentage: 50, color: "primary", tooltip: "Funds all direct winnings and jackpot payouts" },
     { name: "Giveaway & Rewards", percentage: 15, color: "secondary", tooltip: "Weekly/monthly drawings, bonus NFTs, reroll rewards" },
     { name: "Development Treasury", percentage: 15, color: "accent", tooltip: "Salaries, backend infrastructure, future feature building" },
-    { name: "Virtuals Agent Wallet", percentage: 10, color: "blue-500", tooltip: "Funds other agents, on-chain actions, community tooling" },
+    { name: "Virtuals Agent Eco Support", percentage: 10, color: "blue-500", tooltip: "Funds other agents, on-chain actions, community tooling" },
     { name: "Marketing & Ops", percentage: 10, color: "amber-500", tooltip: "Paid promotions, Twitter spaces, influencers, Discord mods" }
   ];
 
@@ -223,7 +223,7 @@ export default function Tokenomics() {
                         <span className="font-bold">{item.percentage}%</span>
                       </div>
                       {/* Tooltip */}
-                      <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-dark-600/95 text-white text-sm p-3 rounded-md shadow-lg top-0 left-full ml-2 z-10 w-64 border border-primary/20">
+                      <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-dark-500/80 text-white text-sm p-3 rounded-md shadow-lg top-0 left-full ml-2 z-10 w-64 border border-primary/30">
                         {item.tooltip}
                       </div>
                     </div>
