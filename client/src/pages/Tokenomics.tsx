@@ -34,6 +34,28 @@ interface PieChartDistributionProps {
   }>;
 }
 
+// Custom label renderer for the pie chart
+const renderCustomizedLabel = (props: any) => {
+  const { cx, cy, midAngle, innerRadius, outerRadius, percent, value, name } = props;
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.7;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text 
+      x={x} 
+      y={y} 
+      fill="white" 
+      fontWeight="bold"
+      textAnchor="middle" 
+      dominantBaseline="central"
+    >
+      {`${value}%`}
+    </text>
+  );
+};
+
 const PieChartDistribution = ({ data }: PieChartDistributionProps) => {
   const chartData = data.map(item => ({
     name: item.name,
@@ -53,6 +75,7 @@ const PieChartDistribution = ({ data }: PieChartDistributionProps) => {
           innerRadius={40}
           fill="#8884d8"
           dataKey="value"
+          label={renderCustomizedLabel}
         >
           {chartData.map((entry, index) => (
             <Cell 
@@ -64,9 +87,12 @@ const PieChartDistribution = ({ data }: PieChartDistributionProps) => {
         <Tooltip 
           formatter={(value: number) => `${value}%`}
           contentStyle={{ 
-            backgroundColor: '#1a1a1a', 
-            borderColor: '#333333',
-            color: '#ffffff' 
+            backgroundColor: '#444444', 
+            borderColor: '#D6001C',
+            color: '#ffffff',
+            fontWeight: 'bold',
+            padding: '8px',
+            borderRadius: '6px'
           }}
         />
       </PieChart>
@@ -197,7 +223,7 @@ export default function Tokenomics() {
                         <span className="font-bold">{item.percentage}%</span>
                       </div>
                       {/* Tooltip */}
-                      <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-dark-900/95 text-sm p-3 rounded-md shadow-lg top-0 left-full ml-2 z-10 w-64 border border-dark-700">
+                      <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-dark-600/95 text-white text-sm p-3 rounded-md shadow-lg top-0 left-full ml-2 z-10 w-64 border border-primary/20">
                         {item.tooltip}
                       </div>
                     </div>
