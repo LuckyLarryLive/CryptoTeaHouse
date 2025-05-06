@@ -12,6 +12,7 @@ import Legal from "@/pages/Legal";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useWallet, WalletContextProvider } from "@/contexts/WalletContext";
+import AgeVerification from "@/components/AgeVerification";
 
 function Router() {
   const { connected } = useWallet();
@@ -41,6 +42,7 @@ function App() {
     <WalletContextProvider>
       <TooltipProvider>
         <Toaster />
+        <AgeVerification />
         <Router />
       </TooltipProvider>
     </WalletContextProvider>
