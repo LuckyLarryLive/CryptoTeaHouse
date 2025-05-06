@@ -8,55 +8,43 @@ const fadeIn = {
 export default function Roadmap() {
   const roadmapItems = [
     {
-      phase: "Q2 2023",
-      title: "Tea House Launch",
+      phase: "Q2 2025",
+      title: "Tea House Launch (Open-Alpha)",
       completed: true,
       color: "primary",
       number: 1,
       items: [
-        { text: "Platform architecture development", completed: true },
-        { text: "Solana wallet integration", completed: true },
-        { text: "Lucky Cat fortune mechanics", completed: true },
-        { text: "Daily and weekly prize pools", completed: true }
+        { text: "Platform Architecture Development Ongoing", completed: true },
+        { text: "Solana Wallet Integration", completed: true },
+        { text: "Lucky Cat Fortune Mechanics", completed: true },
+        { text: "Daily and Weekly Prize Pools Begin", completed: true }
       ]
     },
     {
-      phase: "Q3 2023",
-      title: "Token & Features",
+      phase: "Q3 2025",
+      title: "Customization Build Out (Open-Beta)",
       completed: true,
       color: "secondary",
       number: 2,
       items: [
-        { text: "Token launch on Solana", completed: true },
-        { text: "Community DAO formation", completed: true },
-        { text: "Monthly prize pools", completed: true },
-        { text: "Enhanced fortune mechanics", completed: true }
+        { text: "NFT Drops", completed: true },
+        { text: "Set Builds for Bonus Features", completed: true },
+        { text: "Daily Blogs Integrated", completed: true },
+        { text: "Community-Driven Enhancements from Beta Visitors", completed: true },
+        { text: "Strategic Partnerships (Virtuals-Only)", completed: true }
       ]
     },
     {
-      phase: "Q4 2023",
-      title: "Expansion",
+      phase: "Q4 2025",
+      title: "Ecosystem Growth (Full Release)",
       completed: false,
       color: "accent",
       number: 3,
       items: [
-        { text: "Yearly grand prize pool launch", completed: false },
-        { text: "Multi-chain support exploration", completed: false },
-        { text: "Tea House NFT collections", completed: false },
-        { text: "Strategic partnerships", completed: false }
-      ]
-    },
-    {
-      phase: "Q1 2024",
-      title: "Ecosystem Growth",
-      completed: false,
-      color: "blue-500",
-      number: 4,
-      items: [
-        { text: "Mobile app release", completed: false },
-        { text: "Advanced staking mechanics", completed: false },
-        { text: "Community-governed prize pools", completed: false },
-        { text: "Global Tea House expansion", completed: false }
+        { text: "Virtuals Agent Launch", completed: false },
+        { text: "Expansion of Virtual News and Investor Tea", completed: false },
+        { text: "Forum Integration", completed: false },
+        { text: "Community-Driven Enhancements (By Vote!)", completed: false }
       ]
     }
   ];
@@ -144,10 +132,10 @@ export default function Roadmap() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="bg-dark-700 p-6 rounded-xl">
                 <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  2024 - Cross-Chain Expansion
+                  2026 - Multi-Chain Expansion
                 </h3>
                 <p className="text-light-300 mb-4">
-                  By Q4 2024, we aim to extend our Tea House experience beyond Solana to include Ethereum, Binance Smart Chain, and emerging Layer 2 solutions. This multi-chain approach will allow us to tap into larger liquidity pools and provide a seamless experience for users regardless of their preferred blockchain.
+                  By Q4 2026, we aim to extend and possibly franchise our Tea Houses beyond Solana to include Ethereum, Binance Smart Chain, and other emerging Layer 2 Solutions. This will allow us to tap into larger liquidity pools and provide a seamless experience for users regardless of the flavor of tea!
                 </p>
                 <ul className="list-disc list-inside text-light-300 space-y-2">
                   <li>Ethereum bridge implementation</li>
@@ -159,16 +147,16 @@ export default function Roadmap() {
               
               <div className="bg-dark-700 p-6 rounded-xl">
                 <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  2025 - Metaverse Tea Houses
+                  2026 and Beyond
                 </h3>
                 <p className="text-light-300 mb-4">
-                  Our 2025 roadmap focuses on creating immersive virtual Tea House environments in popular metaverse platforms. Users will be able to visit virtual locations, interact with other crypto enthusiasts, and participate in exclusive fortune-telling ceremonies with enhanced visual experiences.
+                  With every push of the button, we'll be listening to our community. Our aim is to bring utility to every aspect of the community through innovative means. Doubling the community's efforts and then working them back into the fold through creative content like Podcasts or Newsletters, addicting entertainment with additional games and rewarded interactions, expert-supported crypto analysis, and anything else our caffeinated cup-holders are fiending for!
                 </p>
                 <ul className="list-disc list-inside text-light-300 space-y-2">
-                  <li>Virtual Tea House locations</li>
-                  <li>Social interaction between users</li>
-                  <li>Metaverse-exclusive fortune mechanics</li>
-                  <li>Virtual Tea House NFT land ownership</li>
+                  <li>Creative Content Creation</li>
+                  <li>Further Gamification</li>
+                  <li>Crypto-Focused Services</li>
+                  <li>Community-Focused Growth</li>
                 </ul>
               </div>
             </div>
@@ -196,38 +184,38 @@ export default function Roadmap() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="p-4 border-b border-dark-600">May 2023</td>
+                    <td className="p-4 border-b border-dark-600">May 2025</td>
                     <td className="p-4 border-b border-dark-600">Initial platform architecture complete</td>
                     <td className="p-4 border-b border-dark-600 text-primary">Completed</td>
                   </tr>
                   <tr>
-                    <td className="p-4 border-b border-dark-600">June 2023</td>
+                    <td className="p-4 border-b border-dark-600">June 2025</td>
                     <td className="p-4 border-b border-dark-600">Solana wallet integration & authentication</td>
                     <td className="p-4 border-b border-dark-600 text-primary">Completed</td>
                   </tr>
                   <tr>
-                    <td className="p-4 border-b border-dark-600">July 2023</td>
-                    <td className="p-4 border-b border-dark-600">TEA Token launch</td>
+                    <td className="p-4 border-b border-dark-600">July 2025</td>
+                    <td className="p-4 border-b border-dark-600">CTH Token launch</td>
                     <td className="p-4 border-b border-dark-600 text-primary">Completed</td>
                   </tr>
                   <tr>
-                    <td className="p-4 border-b border-dark-600">September 2023</td>
-                    <td className="p-4 border-b border-dark-600">10,000 active users milestone</td>
+                    <td className="p-4 border-b border-dark-600">August 2025</td>
+                    <td className="p-4 border-b border-dark-600">NFT Drops & Set Build Features</td>
                     <td className="p-4 border-b border-dark-600 text-primary">Completed</td>
                   </tr>
                   <tr>
-                    <td className="p-4 border-b border-dark-600">November 2023</td>
-                    <td className="p-4 border-b border-dark-600">First major exchange listing</td>
+                    <td className="p-4 border-b border-dark-600">October 2025</td>
+                    <td className="p-4 border-b border-dark-600">Virtuals Agent Launch</td>
                     <td className="p-4 border-b border-dark-600 text-secondary">In Progress</td>
                   </tr>
                   <tr>
-                    <td className="p-4 border-b border-dark-600">December 2023</td>
-                    <td className="p-4 border-b border-dark-600">Yearly prize pool launch (100 SOL grand prize)</td>
+                    <td className="p-4 border-b border-dark-600">November 2025</td>
+                    <td className="p-4 border-b border-dark-600">Forum Integration with Community Voting</td>
                     <td className="p-4 border-b border-dark-600 text-accent">Upcoming</td>
                   </tr>
                   <tr>
-                    <td className="p-4">February 2024</td>
-                    <td className="p-4">Mobile app beta release</td>
+                    <td className="p-4">January 2026</td>
+                    <td className="p-4">Multi-Chain Integration Planning</td>
                     <td className="p-4 text-accent">Upcoming</td>
                   </tr>
                 </tbody>
@@ -247,30 +235,30 @@ export default function Roadmap() {
             <h2 className="text-3xl font-bold mb-8 text-center">Roadmap FAQ</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-dark-700 p-6 rounded-xl">
-                <h3 className="text-xl font-bold mb-2">When will the mobile app be available?</h3>
+                <h3 className="text-xl font-bold mb-2">What are Virtuals Agents?</h3>
                 <p className="text-light-300">
-                  We plan to launch the mobile app beta in Q1 2024, with the full release scheduled for Q2 2024. The app will be available for both iOS and Android devices.
+                  Virtuals Agents are dedicated AI-powered assistants that help users navigate the crypto market, analyze trends, and provide insights on potential opportunities. They'll be integrated with our platform in Q4 2025.
                 </p>
               </div>
               
               <div className="bg-dark-700 p-6 rounded-xl">
                 <h3 className="text-xl font-bold mb-2">How will the yearly prize pool work?</h3>
                 <p className="text-light-300">
-                  The yearly prize pool will launch in December 2023 with a 100 SOL grand prize. Users collect yearly tickets through monthly draws and special events. The first annual draw will take place on January 1, 2024.
+                  The yearly prize pool will launch in Q1 2026 with substantial SOL prizes. Users collect yearly tickets through daily and weekly draws. Prize amounts will scale with platform growth and community size.
                 </p>
               </div>
               
               <div className="bg-dark-700 p-6 rounded-xl">
                 <h3 className="text-xl font-bold mb-2">What are the NFT collections mentioned in the roadmap?</h3>
                 <p className="text-light-300">
-                  Our NFT collections will feature unique Lucky Cat designs with different rarity tiers. Holding these NFTs will provide benefits like increased pull limits, exclusive rewards, and governance weight.
+                  Our NFT collections feature unique Lucky Cat designs with different rarity tiers. Holding these NFTs provides benefits like increased pull limits, exclusive rewards, and access to premium content.
                 </p>
               </div>
               
               <div className="bg-dark-700 p-6 rounded-xl">
                 <h3 className="text-xl font-bold mb-2">Will there be a way to earn passive income?</h3>
                 <p className="text-light-300">
-                  Yes, our advanced staking mechanics will allow TEA token holders to earn passive income while also gaining benefits within the platform. This feature is planned for Q1 2024.
+                  Yes, our advanced staking mechanics will allow CTH token holders to earn passive income while also gaining benefits within the platform. This feature is part of our 2026 multi-chain expansion plans.
                 </p>
               </div>
             </div>
