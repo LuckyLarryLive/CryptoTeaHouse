@@ -7,10 +7,11 @@ const fadeIn = {
 
 export default function Tokenomics() {
   const tokenDistribution = [
-    { name: "Prize Pool", percentage: 40, color: "primary" },
-    { name: "Community Treasury", percentage: 25, color: "secondary" },
-    { name: "Team & Development", percentage: 20, color: "accent" },
-    { name: "Marketing & Partnerships", percentage: 15, color: "blue-500" }
+    { name: "Player Prize Pool", percentage: 50, color: "primary", tooltip: "Funds all direct winnings and jackpot payouts" },
+    { name: "Giveaway & Rewards", percentage: 15, color: "secondary", tooltip: "Weekly/monthly drawings, bonus NFTs, reroll rewards" },
+    { name: "Development Treasury", percentage: 15, color: "accent", tooltip: "Salaries, backend infrastructure, future feature building" },
+    { name: "Virtuals Agent Wallet", percentage: 10, color: "blue-500", tooltip: "Funds other agents, on-chain actions, community tooling" },
+    { name: "Marketing & Ops", percentage: 10, color: "amber-500", tooltip: "Paid promotions, Twitter spaces, influencers, Discord mods" }
   ];
 
   const tokenUtility = [
@@ -59,8 +60,8 @@ export default function Tokenomics() {
   const tokenomicsDetails = [
     {
       title: "Initial Supply",
-      value: "100,000,000 TEA",
-      description: "The fixed total supply of TEA tokens"
+      value: "100,000,000 CTH",
+      description: "The fixed total supply of CTH tokens"
     },
     {
       title: "Vesting Schedule",
@@ -94,7 +95,7 @@ export default function Tokenomics() {
             <h1 className="text-4xl md:text-5xl font-bold mb-6">Tokenomics</h1>
             <p className="text-xl text-light-300 max-w-3xl mx-auto">
               Understanding the economic model behind the Crypto Tea House ecosystem.
-              Our TEA token powers all aspects of the platform, from prize pools to governance.
+              Our CTH token powers all aspects of the platform, from prize pools to governance.
             </p>
           </motion.div>
 
@@ -108,18 +109,22 @@ export default function Tokenomics() {
               variants={fadeIn}
             >
               <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Token Distribution
+                Distribution Breakdown
               </h3>
               
               <div className="space-y-6">
                 {tokenDistribution.map((item, index) => (
-                  <div key={index} className="bg-dark-700 rounded-xl p-6">
+                  <div key={index} className="bg-dark-700 rounded-xl p-6 group relative">
                     <div className="flex justify-between items-center mb-3">
                       <span className="font-medium">{item.name}</span>
                       <span className="font-bold">{item.percentage}%</span>
                     </div>
                     <div className="w-full bg-dark-900 rounded-full h-4">
                       <div className={`bg-${item.color} h-4 rounded-full`} style={{ width: `${item.percentage}%` }}></div>
+                    </div>
+                    {/* Tooltip */}
+                    <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-dark-900/95 text-sm p-3 rounded-md shadow-lg -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full z-10 w-64 border border-dark-700">
+                      {item.tooltip}
                     </div>
                   </div>
                 ))}
@@ -135,7 +140,7 @@ export default function Tokenomics() {
               variants={fadeIn}
             >
               <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Token Utility
+                Token Utility <span className="text-sm font-normal text-amber-400/80">(coming soon!)</span>
               </h3>
               
               <div className="space-y-6">
@@ -183,7 +188,7 @@ export default function Tokenomics() {
             </div>
           </motion.div>
 
-          {/* TEA Token Ecosystem */}
+          {/* CTH Token Ecosystem */}
           <motion.div 
             className="bg-dark-800/50 rounded-2xl p-8 md:p-12 mb-24"
             initial="hidden"
@@ -192,37 +197,37 @@ export default function Tokenomics() {
             transition={{ duration: 0.6 }}
             variants={fadeIn}
           >
-            <h2 className="text-3xl font-bold mb-8 text-center">TEA Token Ecosystem</h2>
+            <h2 className="text-3xl font-bold mb-8 text-center">CTH Token Ecosystem</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Token Flow Diagram (Left Side) */}
               <div className="bg-dark-700 rounded-xl p-6 md:p-8 flex items-center justify-center">
                 <svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* Central TEA Token */}
-                  <circle cx="150" cy="150" r="50" fill="#14F195" fillOpacity="0.2" />
-                  <text x="150" y="155" fontSize="14" fill="white" textAnchor="middle" fontWeight="bold">TEA TOKEN</text>
+                  {/* Central CTH Token */}
+                  <circle cx="150" cy="150" r="50" fill="#D6001C" fillOpacity="0.2" />
+                  <text x="150" y="155" fontSize="14" fill="white" textAnchor="middle" fontWeight="bold">CTH TOKEN</text>
                   
                   {/* Prize Pool Node */}
-                  <circle cx="75" cy="75" r="30" fill="#14F195" fillOpacity="0.2" />
+                  <circle cx="75" cy="75" r="30" fill="#D6001C" fillOpacity="0.2" />
                   <text x="75" y="75" fontSize="10" fill="white" textAnchor="middle">Prize Pool</text>
                   
                   {/* Governance Node */}
-                  <circle cx="225" cy="75" r="30" fill="#9945FF" fillOpacity="0.2" />
+                  <circle cx="225" cy="75" r="30" fill="#8B4513" fillOpacity="0.2" />
                   <text x="225" y="75" fontSize="10" fill="white" textAnchor="middle">Governance</text>
                   
                   {/* Staking Node */}
-                  <circle cx="75" cy="225" r="30" fill="#3B82F6" fillOpacity="0.2" />
+                  <circle cx="75" cy="225" r="30" fill="#AA8133" fillOpacity="0.2" />
                   <text x="75" y="225" fontSize="10" fill="white" textAnchor="middle">Staking</text>
                   
                   {/* Features Node */}
-                  <circle cx="225" cy="225" r="30" fill="#F5A623" fillOpacity="0.2" />
+                  <circle cx="225" cy="225" r="30" fill="#F8D56F" fillOpacity="0.2" />
                   <text x="225" y="225" fontSize="10" fill="white" textAnchor="middle">Premium Features</text>
                   
                   {/* Connecting Lines */}
-                  <line x1="110" y1="110" x2="85" y2="85" stroke="#14F195" strokeWidth="2" />
-                  <line x1="190" y1="110" x2="215" y2="85" stroke="#9945FF" strokeWidth="2" />
-                  <line x1="110" y1="190" x2="85" y2="215" stroke="#3B82F6" strokeWidth="2" />
-                  <line x1="190" y1="190" x2="215" y2="215" stroke="#F5A623" strokeWidth="2" />
+                  <line x1="110" y1="110" x2="85" y2="85" stroke="#D6001C" strokeWidth="2" />
+                  <line x1="190" y1="110" x2="215" y2="85" stroke="#8B4513" strokeWidth="2" />
+                  <line x1="110" y1="190" x2="85" y2="215" stroke="#AA8133" strokeWidth="2" />
+                  <line x1="190" y1="190" x2="215" y2="215" stroke="#F8D56F" strokeWidth="2" />
                 </svg>
               </div>
               
@@ -242,14 +247,14 @@ export default function Tokenomics() {
                 <div>
                   <h4 className="font-medium mb-2">Community Governance</h4>
                   <p className="text-light-300 text-sm mb-4">
-                    TEA token holders can participate in governance decisions including prize pool allocations, feature development priority, and protocol upgrades through a DAO structure.
+                    CTH token holders can participate in governance decisions including prize pool allocations, feature development priority, and protocol upgrades through a DAO structure.
                   </p>
                 </div>
                 
                 <div>
                   <h4 className="font-medium mb-2">Staking Mechanism</h4>
                   <p className="text-light-300 text-sm mb-4">
-                    By staking TEA tokens, users earn passive yield and receive boosted odds in drawings. The staking APY adjusts based on total tokens staked, ensuring fair returns.
+                    By staking CTH tokens, users earn passive yield and receive boosted odds in drawings. The staking APY adjusts based on total tokens staked, ensuring fair returns.
                   </p>
                 </div>
                 
@@ -287,25 +292,25 @@ export default function Tokenomics() {
                 <tbody>
                   <tr>
                     <td className="p-4 border-b border-dark-600">Prize Pool</td>
-                    <td className="p-4 border-b border-dark-600">40,000,000 TEA</td>
+                    <td className="p-4 border-b border-dark-600">40,000,000 CTH</td>
                     <td className="p-4 border-b border-dark-600">Linear, 4 years</td>
                     <td className="p-4 border-b border-dark-600">None</td>
                   </tr>
                   <tr>
                     <td className="p-4 border-b border-dark-600">Community Treasury</td>
-                    <td className="p-4 border-b border-dark-600">25,000,000 TEA</td>
+                    <td className="p-4 border-b border-dark-600">25,000,000 CTH</td>
                     <td className="p-4 border-b border-dark-600">Linear, 5 years</td>
                     <td className="p-4 border-b border-dark-600">6 months</td>
                   </tr>
                   <tr>
                     <td className="p-4 border-b border-dark-600">Team & Development</td>
-                    <td className="p-4 border-b border-dark-600">20,000,000 TEA</td>
+                    <td className="p-4 border-b border-dark-600">20,000,000 CTH</td>
                     <td className="p-4 border-b border-dark-600">Linear, 4 years</td>
                     <td className="p-4 border-b border-dark-600">1 year</td>
                   </tr>
                   <tr>
                     <td className="p-4">Marketing & Partnerships</td>
-                    <td className="p-4">15,000,000 TEA</td>
+                    <td className="p-4">15,000,000 CTH</td>
                     <td className="p-4">Linear, 3 years</td>
                     <td className="p-4">3 months</td>
                   </tr>
@@ -336,15 +341,15 @@ export default function Tokenomics() {
                   </div>
                   <div className="flex justify-between border-b border-dark-600 pb-2">
                     <span className="text-light-300">Sale Allocation</span>
-                    <span className="font-medium">20,000,000 TEA (20%)</span>
+                    <span className="font-medium">20,000,000 CTH (20%)</span>
                   </div>
                   <div className="flex justify-between border-b border-dark-600 pb-2">
                     <span className="text-light-300">Minimum Purchase</span>
-                    <span className="font-medium">100 TEA</span>
+                    <span className="font-medium">100 CTH</span>
                   </div>
                   <div className="flex justify-between border-b border-dark-600 pb-2">
                     <span className="text-light-300">Maximum Purchase</span>
-                    <span className="font-medium">50,000 TEA</span>
+                    <span className="font-medium">50,000 CTH</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-light-300">Payment Accepted</span>
@@ -375,7 +380,7 @@ export default function Tokenomics() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-light-300">Initial Circulating Supply</span>
-                    <span className="font-medium">30,000,000 TEA</span>
+                    <span className="font-medium">30,000,000 CTH</span>
                   </div>
                 </div>
               </div>
@@ -391,7 +396,7 @@ export default function Tokenomics() {
             transition={{ duration: 0.5 }}
             variants={fadeIn}
           >
-            <h2 className="text-3xl font-bold mb-4">Join the TEA Token Economy</h2>
+            <h2 className="text-3xl font-bold mb-4">Join the CTH Token Economy</h2>
             <p className="text-xl text-light-300 max-w-2xl mx-auto mb-8">
               Be part of the Crypto Tea House ecosystem and participate in our unique fortune-based rewards platform.
             </p>
