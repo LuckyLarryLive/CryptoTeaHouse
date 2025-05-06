@@ -60,8 +60,23 @@ const PieChartDistribution = ({ data }: PieChartDistributionProps) => {
   const chartData = data.map(item => ({
     name: item.name,
     value: item.percentage,
-    color: item.color
+    color: item.color,
+    tooltip: item.tooltip
   }));
+  
+  // Custom tooltip that shows the description instead of just the name
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip bg-dark-500/90 p-3 rounded-md border border-primary/30 shadow-lg">
+          <p className="font-bold text-white">{payload[0].payload.name}</p>
+          <p className="text-white">{payload[0].value}%</p>
+          <p className="text-light-200 text-sm mt-1">{payload[0].payload.tooltip}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <ResponsiveContainer width={300} height={300}>
@@ -84,17 +99,7 @@ const PieChartDistribution = ({ data }: PieChartDistributionProps) => {
             />
           ))}
         </Pie>
-        <Tooltip 
-          formatter={(value: number) => `${value}%`}
-          contentStyle={{ 
-            backgroundColor: '#666666', 
-            borderColor: '#D6001C',
-            color: '#ffffff',
-            fontWeight: 'bold',
-            padding: '8px',
-            borderRadius: '6px'
-          }}
-        />
+        <Tooltip content={<CustomTooltip />} />
       </PieChart>
     </ResponsiveContainer>
   );
