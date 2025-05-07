@@ -8,8 +8,9 @@ import ProfileMenu from "./ProfileMenu";
 
 export default function Header() {
   const [location] = useLocation();
-  const { connected } = useWallet();
+  const { connected, user } = useWallet();
   const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   
   const navItems = [
     { name: "Tea House", path: "/" },
@@ -24,6 +25,11 @@ export default function Header() {
     if (path === "/" && location === "/") return true;
     if (path !== "/" && location.startsWith(path)) return true;
     return false;
+  };
+
+  const handleAuthClick = (isSignUpFlow: boolean) => {
+    setIsSignUp(isSignUpFlow);
+    setWalletModalOpen(true);
   };
   
   return (
@@ -82,7 +88,7 @@ export default function Header() {
                 </Button>
               </SheetTrigger>
               
-              <SheetContent side="right" className="bg-dark-900 border-l border-dark-700">
+              <SheetContent className="bg-dark-900/95 backdrop-blur-md border-l border-dark-700">
                 <nav className="flex flex-col space-y-4 mt-8">
                   {navItems.map((item) => (
                     <Link
@@ -115,12 +121,21 @@ export default function Header() {
                       </Button>
                     </>
                   ) : (
-                    <Button 
-                      className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold mt-4"
-                      onClick={() => setWalletModalOpen(true)}
-                    >
-                      Connect Wallet
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold"
+                        onClick={() => handleAuthClick(false)}
+                      >
+                        Log In
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        className="border-primary/30 text-primary hover:bg-primary/10"
+                        onClick={() => handleAuthClick(true)}
+                      >
+                        Sign Up
+                      </Button>
+                    </div>
                   )}
                 </nav>
               </SheetContent>
@@ -139,12 +154,21 @@ export default function Header() {
                   <ProfileMenu />
                 </>
               ) : (
-                <Button
-                  className="hidden md:block bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold px-5 py-2 rounded-lg shadow-lg wallet-button"
-                  onClick={() => setWalletModalOpen(true)}
-                >
-                  Connect Wallet
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold px-5 py-2 rounded-lg shadow-lg wallet-button"
+                    onClick={() => handleAuthClick(false)}
+                  >
+                    Log In
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-primary/30 text-primary hover:bg-primary/10 px-5 py-2 rounded-lg"
+                    onClick={() => handleAuthClick(true)}
+                  >
+                    Sign Up
+                  </Button>
+                </div>
               )}
             </div>
           </div>
@@ -152,7 +176,11 @@ export default function Header() {
       </header>
       
       {walletModalOpen && (
-        <WalletModal isOpen={walletModalOpen} onClose={() => setWalletModalOpen(false)} />
+        <WalletModal 
+          isOpen={walletModalOpen} 
+          onClose={() => setWalletModalOpen(false)}
+          isSignUp={isSignUp}
+        />
       )}
     </>
   );

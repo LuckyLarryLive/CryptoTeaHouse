@@ -41,6 +41,13 @@ export default function Home() {
                 >
                   {connected ? "Enter Tea House" : "Connect Wallet"}
                 </Button>
+                <p className="text-sm text-light-300 mt-2">
+                  No purchase necessary. See{" "}
+                  <Link href="/legal#terms" className="text-primary hover:underline">
+                    Terms and Agreements
+                  </Link>{" "}
+                  for details.
+                </p>
               </div>
             </div>
             

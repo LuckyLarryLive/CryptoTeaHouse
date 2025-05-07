@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 interface WalletContextType {
   connected: boolean;
   publicKey: string | null;
-  user: { id: number; publicKey: string } | null;
+  user: { id: number; publicKey: string; username?: string } | null;
   connecting: boolean;
   isConnecting: boolean;
   connect: (walletName: string) => Promise<void>;
@@ -54,7 +54,7 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
   const [connected, setConnected] = useState(false);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [wallet, setWallet] = useState<any>(null);
-  const [user, setUser] = useState<{ id: number; publicKey: string } | null>(null);
+  const [user, setUser] = useState<{ id: number; publicKey: string; username?: string } | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();

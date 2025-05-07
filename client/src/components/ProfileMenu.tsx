@@ -10,7 +10,7 @@ import {
 import { useWallet } from "@/contexts/WalletContext";
 
 export default function ProfileMenu() {
-  const { publicKey, disconnect } = useWallet();
+  const { publicKey, user, disconnect } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
 
   const formatPublicKey = (key: string | null) => {
@@ -25,7 +25,7 @@ export default function ProfileMenu() {
           variant="outline"
           className="bg-dark-700 border border-primary/30 text-light-100"
         >
-          {formatPublicKey(publicKey)} <span className="w-2 h-2 bg-primary rounded-full inline-block ml-2"></span>
+          {user?.username || formatPublicKey(publicKey)} <span className="w-2 h-2 bg-primary rounded-full inline-block ml-2"></span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-dark-800 border border-dark-700">

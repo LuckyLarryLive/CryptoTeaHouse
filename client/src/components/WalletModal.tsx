@@ -1,19 +1,25 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogPortal } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useWallet } from "@/contexts/WalletContext";
 import { Link } from "wouter";
 
 interface WalletModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isSignUp?: boolean;
 }
 
-export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
+export default function WalletModal({ isOpen, onClose, isSignUp = false }: WalletModalProps) {
   const { connect, isConnecting } = useWallet();
   console.log("[WalletModal] RECEIVED context. Connect function reference:", connect);
 
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleConnect = async (walletName: string) => {
     console.log(`[WalletModal] handleConnect called with: ${walletName}`);
@@ -34,18 +40,93 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
     }
   };
 
+  const handleUsernamePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      if (isSignUp) {
+        // TODO: Implement sign up logic
+        console.log("Sign up:", { username, password, confirmPassword });
+      } else {
+        // TODO: Implement sign in logic
+        console.log("Sign in:", { username, password });
+      }
+      onClose();
+    } catch (error) {
+      console.error(isSignUp ? "Sign up error:" : "Sign in error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogPortal>
         <DialogContent className="bg-dark-800/95 backdrop-blur-md border border-dark-700 text-white w-full max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Connect Wallet</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">
+              {isSignUp ? "Create Account" : "Sign In"}
+            </DialogTitle>
             <DialogDescription className="text-light-300">
-              Select a wallet to connect to Crypto Tea House
+              Choose your preferred {isSignUp ? "sign up" : "sign in"} method
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 mt-4">
+            {/* Username/Password Form */}
+            <form onSubmit={handleUsernamePasswordSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="bg-dark-700 border-dark-600 text-white"
+                  required
+                />
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-dark-700 border-dark-600 text-white"
+                  required
+                />
+                {isSignUp && (
+                  <Input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="bg-dark-700 border-dark-600 text-white"
+                    required
+                  />
+                )}
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-dark-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : null}
+                {isSignUp ? "Create Account" : "Sign In"}
+              </Button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-dark-600"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-dark-800 text-light-300">Or connect with wallet</span>
+              </div>
+            </div>
+
             {/* Phantom */}
             <Button
               variant="ghost"
@@ -139,7 +220,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
           </div>
           
           <div className="text-sm text-light-300 text-center mt-4">
-            By connecting your wallet, you agree to our{" "}
+            By {isSignUp ? "creating an account" : "signing in"}, you agree to our{" "}
             <Link href="/legal#terms" className="text-primary hover:underline">
               Terms and Agreements
             </Link>
