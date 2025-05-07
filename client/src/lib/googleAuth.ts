@@ -44,7 +44,7 @@ declare global {
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const GOOGLE_REDIRECT_URI = import.meta.env.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/auth/google/callback`;
+const GOOGLE_REDIRECT_URI = import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'https://cryptoteahouse.com/auth/google/callback';
 
 // Initialize Google OAuth
 export const initGoogleAuth = () => {
@@ -106,7 +106,7 @@ export const handleGoogleSignIn = async (): Promise<GoogleUser> => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: 'https://cryptoteahouse.com/auth/callback',
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
