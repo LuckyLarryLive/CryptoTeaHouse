@@ -1,13 +1,26 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import { apiRequest } from "@/lib/queryClient";
+import { createClient } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
+
+// Initialize Supabase client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Define the context types
 interface WalletContextType {
   connected: boolean;
   publicKey: string | null;
-  user: { id: number; publicKey: string; username?: string } | null;
+  user: { 
+    id: number; 
+    publicKey: string; 
+    username?: string;
+    email?: string;
+    name?: string;
+    picture?: string;
+    provider?: 'wallet' | 'google';
+  } | null;
   connecting: boolean;
   isConnecting: boolean;
   connect: (walletName: string) => Promise<void>;
@@ -15,6 +28,7 @@ interface WalletContextType {
   signTransaction: (transaction: Transaction) => Promise<Transaction>;
   signAllTransactions: (transactions: Transaction[]) => Promise<Transaction[]>;
   sendTransaction: (transaction: Transaction) => Promise<string>;
+  setUser: (user: WalletContextType['user']) => void;
 }
 
 // Create the context with default values
@@ -24,23 +38,12 @@ const WalletContext = createContext<WalletContextType>({
   user: null,
   connecting: false,
   isConnecting: false,
-  connect: async (walletName?: string) => { 
-    console.error("[WalletContext] DEFAULT (EMPTY) connect function called. This should not happen if context is provided correctly. WalletName:", walletName);
-    throw new Error("Default context connect function was called - provider not found or not updated.");
-  },
+  connect: async () => { throw new Error("Default context connect function was called"); },
   disconnect: () => { console.error("[WalletContext] DEFAULT disconnect called."); },
-  signTransaction: async () => { 
-    console.error("[WalletContext] DEFAULT signTransaction called."); 
-    return new Transaction(); 
-  },
-  signAllTransactions: async () => { 
-    console.error("[WalletContext] DEFAULT signAllTransactions called."); 
-    return []; 
-  },
-  sendTransaction: async () => { 
-    console.error("[WalletContext] DEFAULT sendTransaction called."); 
-    return ""; 
-  },
+  signTransaction: async () => { throw new Error("Default signTransaction called."); },
+  signAllTransactions: async () => { throw new Error("Default signAllTransactions called."); },
+  sendTransaction: async () => { throw new Error("Default sendTransaction called."); },
+  setUser: () => { console.error("[WalletContext] DEFAULT setUser called."); },
 });
 
 // Hook to use the wallet context
@@ -54,10 +57,52 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
   const [connected, setConnected] = useState(false);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [wallet, setWallet] = useState<any>(null);
-  const [user, setUser] = useState<{ id: number; publicKey: string; username?: string } | null>(null);
+  const [user, setUser] = useState<WalletContextType['user']>(null);
   const [connecting, setConnecting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
+
+  // Check for Supabase session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser({
+          id: parseInt(session.user.id),
+          publicKey: session.user.email || '',
+          email: session.user.email,
+          name: session.user.user_metadata.full_name,
+          picture: session.user.user_metadata.avatar_url,
+          provider: 'google'
+        });
+        setConnected(true);
+      }
+    };
+
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        setUser({
+          id: parseInt(session.user.id),
+          publicKey: session.user.email || '',
+          email: session.user.email,
+          name: session.user.user_metadata.full_name,
+          picture: session.user.user_metadata.avatar_url,
+          provider: 'google'
+        });
+        setConnected(true);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setConnected(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Solana RPC connection
   const connection = new Connection(
@@ -94,10 +139,23 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
   // Authenticate user with the server
   const authenticateUser = async (publicKeyStr: string) => {
     try {
-      const response = await apiRequest("POST", "/api/auth", { publicKey: publicKeyStr });
-      const data = await response.json();
-      setUser(data.user);
-      return data.user;
+      // For wallet authentication, we'll use the public key as the identifier
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({
+        email: `${publicKeyStr}@wallet.local`,
+        password: publicKeyStr, // In a real app, you'd want to hash this
+      });
+
+      if (error) throw error;
+
+      if (user) {
+        setUser({
+          id: parseInt(user.id),
+          publicKey: publicKeyStr,
+          provider: 'wallet'
+        });
+        return user;
+      }
+      throw new Error('No user data received');
     } catch (error) {
       console.error("Authentication error:", error);
       throw error;
@@ -223,8 +281,10 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
   };
 
   // Disconnect wallet
-  const disconnect = () => {
-    if (wallet) {
+  const disconnect = async () => {
+    if (user?.provider === 'google') {
+      await supabase.auth.signOut();
+    } else if (wallet) {
       wallet.disconnect();
     }
     setConnected(false);
@@ -232,7 +292,7 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
     setUser(null);
     toast({
       title: "Disconnected",
-      description: "Wallet disconnected",
+      description: "Successfully disconnected",
     });
   };
 
@@ -292,6 +352,7 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
     signTransaction,
     signAllTransactions,
     sendTransaction,
+    setUser,
   };
 
   // Log the connect function being provided to the context

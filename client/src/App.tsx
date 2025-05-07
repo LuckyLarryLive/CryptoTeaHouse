@@ -13,6 +13,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useWallet, WalletContextProvider } from "@/contexts/WalletContext";
 import AgeVerification from "@/components/AgeVerification";
+import AuthCallback from "@/pages/AuthCallback";
+import CompleteProfile from '@/pages/CompleteProfile';
 
 function Router() {
   const { connected } = useWallet();
@@ -30,6 +32,8 @@ function Router() {
         <Route path="/tokenomics" component={Tokenomics} />
         <Route path="/roadmap" component={Roadmap} />
         <Route path="/legal" component={Legal} />
+        <Route path="/auth/callback" component={AuthCallback} />
+        <Route path="/complete-profile" component={CompleteProfile} />
         <Route component={NotFound} />
       </Switch>
       <Footer />
