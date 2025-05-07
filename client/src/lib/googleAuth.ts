@@ -102,25 +102,61 @@ export const handleGoogleSignIn = async (): Promise<GoogleUser> => {
     }
 
     logWithPersistence('[GoogleAuth] No existing session, initiating OAuth flow...');
-    // If no session, start the OAuth flow
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: 'https://cryptoteahouse.com/auth/callback',
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
+    
+    // Initialize Google OAuth client
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'email profile',
+      callback: async (response) => {
+        if (response.access_token) {
+          try {
+            // Get user info from Google
+            const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: {
+                Authorization: `Bearer ${response.access_token}`
+              }
+            });
+            const userInfo = await userInfoResponse.json();
+
+            // Send the token and user info to your server
+            const serverResponse = await fetch('/api/auth/google', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                access_token: response.access_token,
+                user_info: userInfo
+              })
+            });
+
+            if (!serverResponse.ok) {
+              throw new Error('Server authentication failed');
+            }
+
+            const { user, token } = await serverResponse.json();
+            
+            // Store the token
+            localStorage.setItem('auth_token', token);
+            
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              picture: user.picture,
+            };
+          } catch (error) {
+            logWithPersistence('[GoogleAuth] Error in callback:', error);
+            throw error;
+          }
+        }
+      }
     });
 
-    if (error) {
-      logWithPersistence('[GoogleAuth] Supabase OAuth error:', error);
-      throw error;
-    }
-
-    logWithPersistence('[GoogleAuth] OAuth flow initiated successfully');
-    // The page will redirect to Google's consent screen
+    // Request access token
+    client.requestAccessToken();
+    
+    // Return empty user object as we'll get the real one in the callback
     return {
       id: '',
       email: '',
