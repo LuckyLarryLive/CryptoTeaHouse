@@ -1,70 +1,140 @@
-# Crypto Tea House
+# Crypto Tea House 🍵
 
-## Overview
-Crypto Tea House is a morning destination for crypto enthusiasts ("degens") that allows users to sign in using their crypto wallets, primarily on the Solana blockchain. The site features a contemporary design centered around a Lucky Cat animation, where users can "pull fortunes," win crypto, and discover "alpha."
+![Crypto Tea House](generated-icon.png)
 
-## Key Features
+## 🌟 Welcome to Crypto Tea House
 
-### Authentication
-- Sign in with Solana wallets
-- Secure authentication flow using wallet signatures
+Crypto Tea House is your daily ritual for crypto fortune and rewards on the Solana blockchain. Connect your wallet, pull the Lucky Cat's paw, and discover your crypto fortune while earning real rewards!
 
-### Fortune System
-- Interactive Lucky Cat animation that users can pull for fortunes
-- Win crypto prizes through daily, weekly, monthly, and yearly draws
+## 🎯 Core Features
+
+### 🐱 Lucky Cat Fortune System
+- Interactive Lucky Cat animation for daily fortune pulls
+- Multiple prize tiers: daily, weekly, monthly, and yearly draws
+- Unique fortune messages and crypto rewards
 - Ticket collection system for different prize tiers
 
-### Tokenomics
-- Native CTH (Crypto Tea House) token that powers the ecosystem
-- Token distribution: 50% Player Prize Pool, 15% Giveaway & Rewards, 15% Development Treasury, 10% Virtuals Agent Eco Support, 10% Marketing & Ops
-- Deflationary model with regular token burning
-- Future staking mechanics for passive income
+### 💰 Rewards & Tokenomics
+- Win SOL and CTH tokens through various prize draws
+- Native CTH token with deflationary mechanics
+- Staking rewards for passive income
+- NFT collections with unique Lucky Cat designs (coming soon)
 
-### Community Features
-- Winners page showcasing recent prize winners
-- Roadmap with development timeline from Q2 2025 through 2026+
-- How It Works section explaining the fortune pulling mechanics
-- Detailed Tokenomics information with visual representation
+### 👛 Wallet Integration
+- Seamless Solana wallet connection
+- Support for major wallets (Phantom, Solflare, etc.)
+- Secure authentication using wallet signatures
+- Real-time balance and transaction tracking
 
-## Technology Stack
+### 🏆 Community Features
+- Live winners board showcasing recent prize winners
+- User dashboard for tracking tickets and rewards
+- Community leaderboards and statistics
+- Referral program for bonus rewards
+
+## 🚀 Getting Started
+
+### Prerequisites
+- A Solana wallet (Phantom, Solflare, etc.)
+- SOL for transaction fees
+- Modern web browser
+
+### Quick Start
+1. Visit [Crypto Tea House](https://cryptoteahouse.com)
+2. Connect your Solana wallet
+3. Pull the Lucky Cat's paw for your daily fortune
+4. Collect tickets and enter prize draws
+5. Track your rewards in the dashboard
+
+## 💡 How It Works
+
+1. **Daily Fortune Pull**
+   - Connect your wallet
+   - Pull the Lucky Cat's paw
+   - Receive your fortune and potential rewards
+   - Collect tickets for prize draws
+
+2. **Prize Draws**
+   - Daily: Small SOL prizes
+   - Weekly: Medium SOL prizes
+   - Monthly: Large SOL prizes
+   - Yearly: Major SOL jackpots
+
+3. **Rewards System**
+   - Win SOL directly from prize draws
+   - Earn CTH tokens through various activities
+   - Stake CTH for passive income
+   - Collect NFTs for additional benefits
+
+## 🛠️ Technical Stack
 
 ### Frontend
-- React with TypeScript
-- Tailwind CSS for styling
-- Framer Motion for animations
-- Recharts for data visualization
-- Shadcn UI components
+- React + TypeScript
+- Tailwind CSS
+- Framer Motion
+- Shadcn UI
+- TanStack Query
 
 ### Backend
-- Express server
-- PostgreSQL database with Drizzle ORM
-- Solana Web3.js for blockchain integration
+- Express.js
+- PostgreSQL
+- Drizzle ORM
+- Solana Web3.js
 
-### Authentication
-- Wallet-based authentication (Solana)
-- Session management with express-session
+### Infrastructure
+- Replit deployment
+- PostgreSQL database
+- Solana blockchain integration
 
-### Data Storage
-- User data and tickets stored in PostgreSQL
-- Transaction history and wallet information
+## 📚 Documentation
 
-## Deployment
-- Application is deployed on Replit
-- Smart contracts to be deployed on Solana mainnet
+For more detailed information, please refer to:
+- [Architecture Documentation](ARCHITECTURE.md)
+- [Tokenomics & Roadmap](TOKENOMICS.md)
 
-## Development Roadmap
-- Q2 2025: Tea House Launch (Open-Alpha)
-- Q3 2025: Customization Build Out (Open-Beta)
-- Q4 2025: Ecosystem Growth (Full Release)
-- 2026: Multi-chain expansion and advanced features
+## 🗺️ Development Roadmap
 
-## User Journey
-1. User connects their Solana wallet
-2. They're presented with the Lucky Cat animation
-3. Users can pull the cat's paw to receive fortunes
-4. Different pulls result in different rewards (crypto, tickets)
-5. Tickets are entered into scheduled prize draws
-6. Winners are announced and displayed on the Winners page
-7. Users can track their tickets and potential winnings in their Dashboard
+### Q2 2025: Tea House Launch (Open-Alpha)
+- Basic Lucky Cat fortune pulling
+- Wallet authentication
+- Daily prize draws
+- User dashboard
 
-This platform combines gamified crypto elements with fortune-telling mechanics to create an engaging daily ritual for crypto enthusiasts.
+### Q3 2025: Customization Build Out (Open-Beta)
+- Weekly prize draws
+- Enhanced animations
+- New fortune types
+- Mobile optimization
+
+### Q4 2025: Ecosystem Growth (Full Release)
+- Monthly prize draws
+- Virtuals Agents integration
+- Advanced dashboards
+- Referral program
+
+### 2026: Expansion & Growth
+- Yearly draws
+- Multi-chain support
+- Advanced staking
+- NFT collections
+- DAO governance
+- Mobile app
+
+## 🤝 Contributing
+
+We welcome contributions! Please read our contributing guidelines and submit pull requests to our repository.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🌐 Connect With Us
+
+- [Website](https://cryptoteahouse.com)
+- [Twitter](https://twitter.com/cryptoteahouse)
+- [Discord](https://discord.gg/cryptoteahouse)
+- [Telegram](https://t.me/cryptoteahouse)
+
+---
+
+Built with ❤️ for the crypto community
