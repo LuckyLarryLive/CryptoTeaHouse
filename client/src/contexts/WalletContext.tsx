@@ -121,12 +121,38 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       } else {
         console.log("[WalletContext] No existing user found, creating new user...");
         
-        // Create a new user profile directly without email auth
+        // First create a user record
+        const { data: newUser, error: userError } = await supabase
+          .from('users')
+          .insert({
+            public_key: publicKeyStr,
+            email: '', // Empty email for now, will be set during profile completion
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (userError) {
+          console.error("Error creating user:", JSON.stringify(userError, null, 2));
+          throw userError;
+        }
+
+        if (!newUser) {
+          console.error("No user data returned after creation");
+          throw new Error("Failed to create user - no data returned");
+        }
+
+        console.log("Successfully created new user:", newUser);
+
+        // Then create the profile
         const { data: newProfile, error: profileError } = await supabase
           .from('profiles')
           .insert({
-            public_key: publicKeyStr,
+            id: newUser.id,
             auth_provider_id: publicKeyStr,
+            display_name: '', // Will be set during profile completion
+            handle: `user_${newUser.id.slice(0, 8)}`, // Temporary handle
+            is_profile_complete: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
@@ -134,13 +160,16 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           .single();
 
         if (profileError) {
-          console.error("Error creating profile:", profileError);
+          console.error("Error creating profile:", JSON.stringify(profileError, null, 2));
           throw profileError;
         }
 
         if (!newProfile) {
-          throw new Error("Failed to create profile");
+          console.error("No profile data returned after creation");
+          throw new Error("Failed to create profile - no data returned");
         }
+
+        console.log("Successfully created new profile:", newProfile);
 
         // Store temporary wallet data
         localStorage.setItem('tempWalletData', JSON.stringify({
@@ -151,12 +180,13 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         
         // Set temporary user state
         setUser({
-          id: newProfile.id,
+          id: newUser.id,
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
         
         // Redirect to complete profile
+        console.log("Redirecting to complete profile page...");
         setLocation('/complete-profile');
       }
     } catch (error) {
