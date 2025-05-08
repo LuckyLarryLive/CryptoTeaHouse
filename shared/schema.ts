@@ -6,12 +6,14 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: uuid("id").primaryKey(),
   publicKey: text("public_key").notNull().unique(),
+  email: text("email").notNull(),
   lastLoginAt: timestamp("last_login_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   publicKey: true,
+  email: true,
 });
 
 // Tickets Table

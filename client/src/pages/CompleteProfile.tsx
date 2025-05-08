@@ -59,14 +59,10 @@ export default function CompleteProfile() {
     }
 
     try {
-      // Generate a valid email for Supabase Auth
-      const authEmail = `${user.publicKey.slice(0, 8)}@cryptoteahouse.com`;
-      const password = `${user.publicKey.slice(0, 16)}!`; // Add special char to meet password requirements
-
       // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: authEmail,
-        password,
+        email: formData.email,
+        password: `${user.publicKey.slice(0, 16)}!`, // Add special char to meet password requirements
         options: {
           data: {
             publicKey: user.publicKey
@@ -84,7 +80,7 @@ export default function CompleteProfile() {
           {
             id: authData.user.id,
             publicKey: user.publicKey,
-            email: authEmail
+            email: formData.email
           }
         ])
         .select()
@@ -142,7 +138,7 @@ export default function CompleteProfile() {
       setUser({
         id: authData.user.id,
         publicKey: user.publicKey,
-        email: authEmail,
+        email: formData.email,
         username: formData.displayName,
         name: formData.displayName,
         picture: profilePictureUrl,
