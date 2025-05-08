@@ -138,11 +138,20 @@ export default function CompleteProfile() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
-        ]);
+        ])
+        .select()
+        .single();
 
       if (profileError) {
-        // Clean up if profile creation fails
-        await supabase.auth.admin.deleteUser(authData.user.id);
+        if (profileError.code === '23505') { // Unique violation
+          toast({
+            title: "Error",
+            description: "A profile with this wallet address already exists. Please try logging in instead.",
+            variant: "destructive"
+          });
+          setLocation('/');
+          return;
+        }
         throw profileError;
       }
 
