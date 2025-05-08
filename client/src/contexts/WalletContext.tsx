@@ -15,7 +15,7 @@ interface WalletContextType {
     email?: string;
     name?: string;
     picture?: string;
-    provider?: 'wallet' | 'google' | 'email';
+    provider?: 'wallet';
   } | null;
   connecting: boolean;
   isConnecting: boolean;
@@ -49,12 +49,6 @@ interface WalletContextProviderProps {
   children: ReactNode;
 }
 
-// Add this type for temporary wallet data
-interface TempWalletData {
-  publicKey: string;
-  timestamp: number;
-}
-
 export function WalletProvider({ children }: WalletContextProviderProps) {
   const [, setLocation] = useLocation();
   const [connected, setConnected] = useState(false);
@@ -64,48 +58,6 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   const [connecting, setConnecting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
-
-  // Check for Supabase session on mount
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          publicKey: session.user.email || '',
-          email: session.user.email,
-          name: session.user.user_metadata.full_name,
-          picture: session.user.user_metadata.avatar_url,
-          provider: 'google'
-        });
-        setConnected(true);
-      }
-    };
-
-    checkSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        setUser({
-          id: session.user.id,
-          publicKey: session.user.email || '',
-          email: session.user.email,
-          name: session.user.user_metadata.full_name,
-          picture: session.user.user_metadata.avatar_url,
-          provider: 'google'
-        });
-        setConnected(true);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setConnected(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   // Solana RPC connection
   const connection = new Connection(
@@ -204,49 +156,25 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     };
   }, []);
 
-  // Connect to wallet
   const connect = async (walletName: string) => {
-    console.log(`[WalletContext] connect function called with: ${walletName}`);
+    console.log(`[WalletContext] connect called with wallet: ${walletName}`);
+    setIsConnecting(true);
+    setConnecting(true);
+    
     try {
-      setIsConnecting(true);
-      console.log(`[WalletContext] setIsConnecting(true)`);
-      
       let walletToConnect;
       
-      // Handle different wallet providers
       if (walletName === "phantom") {
         console.log("[WalletContext] Processing 'phantom' wallet...");
-        const phantom = (window as any).solana;
-        console.log("[WalletContext] Phantom provider object:", phantom);
-        console.log("[WalletContext] Phantom wallet check:", { 
-          exists: !!phantom, 
-          isPhantom: phantom?.isPhantom,
-          isConnected: phantom?.isConnected 
-        });
-        
-        if (!phantom) {
-          console.error("[WalletContext] Phantom provider (window.solana) not found.");
-          toast({
-            title: "Phantom Not Found",
-            description: "Please install the Phantom wallet extension first.",
-            variant: "destructive",
-          });
+        const solana = (window as any).solana;
+        console.log("[WalletContext] Solana provider object:", solana);
+        if (!solana?.isPhantom) {
+          console.error("[WalletContext] Phantom provider (window.solana) not found or not Phantom.");
           window.open("https://phantom.app/", "_blank");
           throw new Error("Phantom wallet not installed. Please install it first.");
         }
-        
-        if (!phantom.isPhantom) {
-          console.error("[WalletContext] window.solana is not Phantom. isPhantom flag is missing or false.");
-          toast({
-            title: "Invalid Wallet",
-            description: "Please make sure you have the official Phantom wallet installed.",
-            variant: "destructive",
-          });
-          throw new Error("Invalid Phantom wallet detected. Please install the official Phantom wallet.");
-        }
-        
-        walletToConnect = phantom;
-        console.log("[WalletContext] Assigned phantom to walletToConnect.");
+        walletToConnect = solana;
+        console.log("[WalletContext] Assigned solana to walletToConnect.");
       } else if (walletName === "solflare") {
         console.log("[WalletContext] Processing 'solflare' wallet...");
         const solflare = (window as any).solflare;
@@ -304,9 +232,9 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       
       console.log(`[WalletContext] connect function for ${walletName} finishing successfully.`);
       return;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[WalletContext] Outer catch block error for ${walletName}:`, error);
-      if (!error.message?.includes("User rejected") && 
+      if (error instanceof Error && !error.message?.includes("User rejected") && 
           !error.message?.includes("not installed") && 
           !error.message?.includes("Invalid Phantom wallet")) {
         toast({
@@ -324,9 +252,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
   // Disconnect wallet
   const disconnect = async () => {
-    if (user?.provider === 'google') {
-      await supabase.auth.signOut();
-    } else if (wallet) {
+    if (wallet) {
       wallet.disconnect();
     }
     setConnected(false);

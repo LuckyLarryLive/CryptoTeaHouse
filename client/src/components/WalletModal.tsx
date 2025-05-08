@@ -1,13 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogPortal } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useWallet } from "@/contexts/WalletContext";
 import { Link } from "wouter";
-import { initGoogleAuth, handleGoogleSignIn, isGoogleInitialized } from "@/lib/googleAuth";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
-import { useLocation } from "wouter";
 
 interface WalletModalProps {
   isOpen: boolean;
@@ -16,30 +12,9 @@ interface WalletModalProps {
 }
 
 export default function WalletModal({ isOpen, onClose, isSignUp = false }: WalletModalProps) {
-  const { connect, isConnecting, setUser } = useWallet();
+  const { connect, isConnecting } = useWallet();
   const { toast } = useToast();
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [, setLocation] = useLocation();
-
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [formErrors, setFormErrors] = useState<{
-    username?: string;
-    email?: string;
-    password?: string;
-    confirmPassword?: string;
-  }>({});
-
-  // Initialize Google Auth when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      initGoogleAuth();
-    }
-  }, [isOpen]);
 
   const handleConnect = async (walletName: string) => {
     console.log(`[WalletModal] handleConnect called with: ${walletName}`);
@@ -60,170 +35,6 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
     }
   };
 
-  const validateForm = async () => {
-    const errors: typeof formErrors = {};
-
-    // Validate username
-    if (!username.trim()) {
-      errors.username = 'Username is required';
-    } else if (username.length < 3) {
-      errors.username = 'Username must be at least 3 characters';
-    } else {
-      // Check if username is unique
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('display_name', username)
-        .single();
-
-      if (existingUser) {
-        errors.username = 'This username is already taken';
-      }
-    }
-
-    // Validate email
-    if (!email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Invalid email format';
-    } else {
-      // Check if email is unique
-      const { data: existingEmail } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .single();
-
-      if (existingEmail) {
-        errors.email = 'This email is already registered';
-      }
-    }
-
-    // Validate password
-    if (!password) {
-      errors.password = 'Password is required';
-    } else if (password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
-    }
-
-    // Validate confirm password
-    if (isSignUp && password !== confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleUsernamePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      const isValid = await validateForm();
-      if (!isValid) {
-        setIsLoading(false);
-        return;
-      }
-
-      if (isSignUp) {
-        // Sign up with email/password
-        const { data: { user, session }, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              username,
-            }
-          }
-        });
-
-        if (signUpError) throw signUpError;
-        if (!user) throw new Error('No user data received after sign up');
-
-        // Create initial profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            email: email,
-            display_name: username,
-            auth_provider: 'email',
-            auth_provider_id: user.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (profileError) throw profileError;
-
-        toast({
-          title: "Success",
-          description: "Account created successfully! Please check your email to verify your account.",
-        });
-
-        onClose();
-        setLocation('/complete-profile');
-      } else {
-        // Sign in with email/password
-        const { data: { user, session }, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (signInError) throw signInError;
-        if (!user) throw new Error('No user data received after sign in');
-
-        toast({
-          title: "Success",
-          description: "Successfully signed in",
-        });
-
-        onClose();
-        setLocation('/dashboard');
-      }
-    } catch (error) {
-      console.error(isSignUp ? "Sign up error:" : "Sign in error:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Authentication failed",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSocialSignIn = async (provider: string) => {
-    if (provider === "gmail") {
-      setIsGoogleLoading(true);
-      try {
-        if (!isGoogleInitialized()) {
-          throw new Error("Google authentication not initialized");
-        }
-        const user = await handleGoogleSignIn();
-        if (user) {
-          toast({
-            title: "Success",
-            description: "Successfully signed in with Google",
-          });
-          onClose();
-          setLocation('/dashboard');
-        }
-      } catch (error) {
-        console.error("Google sign-in error:", error);
-        toast({
-          title: "Error",
-          description: "Failed to sign in with Google",
-          variant: "destructive",
-        });
-      } finally {
-        setIsGoogleLoading(false);
-      }
-    } else {
-      // TODO: Implement other social sign-in methods
-      console.log(`Sign in with ${provider}`);
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogPortal>
@@ -233,7 +44,7 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
               {isSignUp ? "Create Account" : "Sign In"}
             </DialogTitle>
             <DialogDescription className="text-light-300">
-              Choose your preferred {isSignUp ? "sign up" : "sign in"} method
+              Choose your preferred wallet to {isSignUp ? "sign up" : "sign in"}
             </DialogDescription>
           </DialogHeader>
           
@@ -290,34 +101,6 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
                 <div className="text-sm text-light-300">Connect with Solflare Wallet</div>
               </div>
               {selectedWallet === "solflare" && isConnecting ? (
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-light-300" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-              )}
-            </Button>
-            
-            {/* Other Wallets */}
-            <Button
-              variant="ghost"
-              className="w-full bg-dark-700 hover:bg-dark-700/70 rounded-xl p-4 flex items-center justify-start h-auto"
-              onClick={() => handleConnect("other")}
-              disabled={isConnecting}
-            >
-              <div className="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <div className="flex-1 text-left">
-                <div className="font-medium">Other Wallets</div>
-                <div className="text-sm text-light-300">View more wallet options</div>
-              </div>
-              {selectedWallet === "other" && isConnecting ? (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
