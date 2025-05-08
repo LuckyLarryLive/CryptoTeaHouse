@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/contexts/WalletContext";
 import WalletModal from "@/components/WalletModal";
-import LuckyCat from "@/components/LuckyCat";
+import LuckyCatVideo from "@/components/LuckyCatVideo";
 
 export default function Home() {
   const [, navigate] = useLocation();
@@ -61,9 +61,9 @@ export default function Home() {
               <div className="relative w-full max-w-lg h-[600px] bg-dark-800 rounded-2xl overflow-hidden shadow-2xl glow">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-dark-900/70">
                   <div className="absolute inset-0 flex items-center justify-center">
-                    {/* Lucky Cat Animation */}
-                    <div className="w-full max-w-md">
-                      <LuckyCat onPullComplete={handlePullComplete} />
+                    {/* Lucky Cat Video */}
+                    <div className="w-full h-full">
+                      <LuckyCatVideo />
                     </div>
                   </div>
                 </div>
