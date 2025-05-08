@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabase } from './supabase';
 
 // Add Google OAuth types
 declare global {
@@ -199,7 +194,7 @@ export const handleGoogleSignIn = async (): Promise<GoogleUser> => {
       id: '',
       email: '',
       name: '',
-      picture: '',
+      picture: ''
     };
   } catch (error) {
     logWithPersistence('[GoogleAuth] Error in handleGoogleSignIn:', error);
@@ -207,7 +202,25 @@ export const handleGoogleSignIn = async (): Promise<GoogleUser> => {
   }
 };
 
-// Check if Google is initialized
 export const isGoogleInitialized = () => {
   return typeof window.google !== 'undefined';
-}; 
+};
+
+export const isGoogleAvailable = (): boolean => {
+  return typeof window.google !== 'undefined';
+};
+
+export async function signInWithGoogle() {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+} 
