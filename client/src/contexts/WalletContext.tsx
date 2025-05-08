@@ -151,32 +151,21 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
       }
 
       if (!existingUser) {
-        // Create new user
+        // Create new user with just the wallet info, no profile yet
         const { data: { user }, error: signUpError } = await supabase.auth.signUp({
           email: `${publicKeyStr}@wallet.local`,
           password: publicKeyStr,
           options: {
             data: {
               publicKey: publicKeyStr,
+              provider: 'wallet',
+              isProfileComplete: false
             }
           }
         });
 
         if (signUpError) throw signUpError;
         if (!user) throw new Error('No user data received after sign up');
-
-        // Create initial profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            auth_provider: 'wallet',
-            auth_provider_id: publicKeyStr,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (profileError) throw profileError;
 
         setUser({
           id: parseInt(user.id),
@@ -197,14 +186,29 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
         if (signInError) throw signInError;
         if (!user) throw new Error('No user data received after sign in');
 
+        // Check if profile exists
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_profile_complete')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
+        }
+
         setUser({
           id: parseInt(user.id),
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
 
-        // Redirect to dashboard for existing users
-        window.location.href = '/dashboard';
+        // Redirect based on profile existence and completion status
+        if (!profile || !profile.is_profile_complete) {
+          window.location.href = '/complete-profile';
+        } else {
+          window.location.href = '/dashboard';
+        }
         return user;
       }
     } catch (error) {

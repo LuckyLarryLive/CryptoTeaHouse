@@ -15,6 +15,7 @@ import { useWallet, WalletContextProvider } from "@/contexts/WalletContext";
 import AgeVerification from "@/components/AgeVerification";
 import AuthCallback from "@/pages/AuthCallback";
 import CompleteProfile from '@/pages/CompleteProfile';
+import Preferences from '@/pages/Preferences';
 
 function Router() {
   const { connected } = useWallet();
@@ -34,6 +35,9 @@ function Router() {
         <Route path="/legal" component={Legal} />
         <Route path="/auth/callback" component={AuthCallback} />
         <Route path="/complete-profile" component={CompleteProfile} />
+        <Route path="/preferences">
+          {connected ? <Preferences /> : <Home />}
+        </Route>
         <Route component={NotFound} />
       </Switch>
       <Footer />
