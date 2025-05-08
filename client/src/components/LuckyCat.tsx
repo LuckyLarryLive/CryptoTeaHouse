@@ -101,38 +101,42 @@ export default function LuckyCat({ onPullComplete }: LuckyCatProps) {
           >
             {/* Lucky Cat SVG - Updated with more traditional style */}
             <g>
-              {/* Body */}
+              {/* Body - More rounded and traditional shape */}
               <path d="M160 280C213.019 280 256 237.019 256 184C256 130.981 213.019 88 160 88C106.981 88 64 130.981 64 184C64 237.019 106.981 280 160 280Z" fill="#F0E4D8" />
               
-              {/* Face */}
-              <circle cx="160" cy="160" r="60" fill="#FFFFFF" />
-              <path d="M140 148C143.866 148 147 144.866 147 141C147 137.134 143.866 134 140 134C136.134 134 133 137.134 133 141C133 144.866 136.134 148 140 148Z" fill="#333333" />
-              <path d="M180 148C183.866 148 187 144.866 187 141C187 137.134 183.866 134 180 134C176.134 134 173 137.134 173 141C173 144.866 176.134 148 180 148Z" fill="#333333" />
+              {/* Face - More traditional proportions */}
+              <circle cx="160" cy="160" r="70" fill="#FFFFFF" />
               
-              {/* Cat smile with whiskers */}
-              <path d="M160 180C171.046 180 180 171.046 180 160H140C140 171.046 148.954 180 160 180Z" fill="#FF9E9E" />
-              <path d="M120 150L95 145" stroke="#333333" strokeWidth="2" strokeLinecap="round" />
-              <path d="M120 160L90 165" stroke="#333333" strokeWidth="2" strokeLinecap="round" />
-              <path d="M200 150L225 145" stroke="#333333" strokeWidth="2" strokeLinecap="round" />
-              <path d="M200 160L230 165" stroke="#333333" strokeWidth="2" strokeLinecap="round" />
+              {/* Eyes - More traditional style */}
+              <path d="M130 140C135.523 140 140 135.523 140 130C140 124.477 135.523 120 130 120C124.477 120 120 124.477 120 130C120 135.523 124.477 140 130 140Z" fill="#333333" />
+              <path d="M190 140C195.523 140 200 135.523 200 130C200 124.477 195.523 120 190 120C184.477 120 180 124.477 180 130C180 135.523 184.477 140 190 140Z" fill="#333333" />
+              
+              {/* Nose and Mouth - More traditional style */}
+              <path d="M160 150C165.523 150 170 145.523 170 140C170 134.477 165.523 130 160 130C154.477 130 150 134.477 150 140C150 145.523 154.477 150 160 150Z" fill="#FF9E9E" />
+              <path d="M160 160C171.046 160 180 151.046 180 140H140C140 151.046 148.954 160 160 160Z" fill="#FF9E9E" />
+              
+              {/* Whiskers - More pronounced */}
+              <path d="M110 150L85 145" stroke="#333333" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M110 160L80 165" stroke="#333333" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M210 150L235 145" stroke="#333333" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M210 160L240 165" stroke="#333333" strokeWidth="2.5" strokeLinecap="round" />
               
               {/* Traditional patterns on body */}
               <path d="M160 260C170 260 178 252 178 242C178 232 170 224 160 224C150 224 142 232 142 242C142 252 150 260 160 260Z" fill="#D6001C" />
-              <path d="M160 254C166.627 254 172 248.627 172 242C172 235.373 166.627 230 160 230C153.373 230 148 235.373 148 242C148 248.627 153.373 254 160 254Z" fill="#F0E4D8" />
               <path d="M160 250C164.418 250 168 246.418 168 242C168 237.582 164.418 234 160 234C155.582 234 152 237.582 152 242C152 246.418 155.582 250 160 250Z" fill="#D6001C" />
               
-              {/* Ears */}
+              {/* Ears - More traditional style */}
               <path d="M110 100C110 88.954 118.954 80 130 80H140C140 91.046 131.046 100 120 100H110Z" fill="#F0E4D8" />
               <path d="M210 100C210 88.954 201.046 80 190 80H180C180 91.046 188.954 100 200 100H210Z" fill="#F0E4D8" />
-              <path d="M115 95C115 90 120 85 125 85" stroke="#D6001C" strokeWidth="2" />
-              <path d="M205 95C205 90 200 85 195 85" stroke="#D6001C" strokeWidth="2" />
+              <path d="M115 95C115 90 120 85 125 85" stroke="#D6001C" strokeWidth="2.5" />
+              <path d="M205 95C205 90 200 85 195 85" stroke="#D6001C" strokeWidth="2.5" />
               
               {/* Traditional Collar with Bell */}
               <path d="M120 200H200V210C200 221.046 191.046 230 180 230H140C128.954 230 120 221.046 120 210V200Z" fill="#D6001C" />
-              <circle cx="160" cy="215" r="10" fill="#F8D56F" stroke="#AA8133" strokeWidth="1" />
-              <circle cx="160" cy="215" r="4" fill="#AA8133" />
-              <path d="M157 212L163 218" stroke="#AA8133" strokeWidth="1" />
-              <path d="M163 212L157 218" stroke="#AA8133" strokeWidth="1" />
+              <circle cx="160" cy="215" r="12" fill="#F8D56F" stroke="#AA8133" strokeWidth="1.5" />
+              <circle cx="160" cy="215" r="5" fill="#AA8133" />
+              <path d="M156 211L164 219" stroke="#AA8133" strokeWidth="1.5" />
+              <path d="M164 211L156 219" stroke="#AA8133" strokeWidth="1.5" />
             </g>
             
             {/* Left Arm (static) */}
@@ -143,28 +147,28 @@ export default function LuckyCat({ onPullComplete }: LuckyCatProps) {
               ref={catPawRef} 
               className="cat-paw"
               animate={isPulling ? 
-                { rotate: [0, 25, -5, 20, -10, 15, 0], x: [0, 2, -1, 2, -2, 1, 0] } : 
+                { rotate: [0, 30, -10, 25, -15, 20, 0], x: [0, 3, -2, 3, -3, 2, 0] } : 
                 { rotate: 0 }
               }
               transition={{ 
-                duration: isPulling ? 1.2 : 0.5,
+                duration: isPulling ? 1.5 : 0.5,
                 ease: isPulling ? "easeInOut" : "easeOut",
                 times: isPulling ? [0, 0.2, 0.35, 0.5, 0.7, 0.85, 1] : [0, 1]
               }}
               style={{ originX: 0.6, originY: 0.9 }}
             >
               <path d="M200 170C210.046 170 220 160.046 220 150V130C220 124.477 215.523 120 210 120C204.477 120 200 124.477 200 130V150C200 155.523 204.477 160 210 160" fill="#F0E4D8" />
-              <circle cx="210" cy="160" r="10" fill="#F0E4D8" />
+              <circle cx="210" cy="160" r="12" fill="#F0E4D8" />
             </motion.g>
             
             {/* Fortune coin with improved styling */}
             <motion.g
-              animate={{ y: [0, -10, 0], rotate: [0, 10, 0, -10, 0] }}
+              animate={{ y: [0, -15, 0], rotate: [0, 15, 0, -15, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
               style={{ transformOrigin: "center" }}
             >
-              <circle cx="240" cy="150" r="20" fill="#F8D56F" stroke="#AA8133" strokeWidth="2" />
-              <text x="240" y="155" fontSize="16" fontWeight="bold" fill="#5D4037" textAnchor="middle">福</text>
+              <circle cx="240" cy="150" r="22" fill="#F8D56F" stroke="#AA8133" strokeWidth="2.5" />
+              <text x="240" y="155" fontSize="18" fontWeight="bold" fill="#5D4037" textAnchor="middle">福</text>
             </motion.g>
           </svg>
           
