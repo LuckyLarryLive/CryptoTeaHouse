@@ -148,6 +148,17 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
         console.log("Successfully created new user:", newUser);
 
+        // Set up the auth session
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: `${publicKeyStr.toLowerCase()}@wallet.solana`,
+          password: publicKeyStr // Using the public key as the password
+        });
+
+        if (authError) {
+          console.error("Error setting up auth session:", JSON.stringify(authError, null, 2));
+          throw authError;
+        }
+
         // Then create the profile
         const { data: newProfile, error: profileError } = await supabase
           .from('profiles')

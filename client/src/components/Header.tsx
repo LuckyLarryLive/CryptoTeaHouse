@@ -39,8 +39,7 @@ export default function Header() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-2">
-              <img src="/logo.png" alt="Logo" className="h-8 w-8" />
-              <span className="text-xl font-bold text-white">Tea House</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Tea House</span>
             </Link>
 
             {/* Desktop Navigation */}
