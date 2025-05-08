@@ -6,6 +6,128 @@
 
 Crypto Tea House is your daily ritual for crypto fortune and rewards on the Solana blockchain. Connect your wallet, pull the Lucky Cat's paw, and discover your crypto fortune while earning real rewards!
 
+## 🚀 Development Setup
+
+### Prerequisites
+- Node.js 18+ and npm
+- PostgreSQL 14+
+- Solana CLI tools
+- A Supabase account
+- Git
+
+### Environment Setup
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/cryptoteahouse.git
+cd cryptoteahouse
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+# Create .env file
+cp .env.example .env
+
+# Required variables:
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+DATABASE_URL=your_database_url
+VITE_SOLANA_RPC_URL=your_solana_rpc_url
+```
+
+4. Initialize the database:
+```bash
+npm run db:push
+```
+
+### Development Workflow
+1. Start the development server:
+```bash
+npm run dev
+```
+
+2. Run tests:
+```bash
+npm test
+```
+
+3. Build for production:
+```bash
+npm run build
+```
+
+## 🏗️ Project Structure
+
+```
+cryptoteahouse/
+├── client/               # Frontend React application
+│   ├── src/
+│   │   ├── components/  # Reusable UI components
+│   │   ├── contexts/    # React contexts (wallet, auth, etc.)
+│   │   ├── hooks/       # Custom React hooks
+│   │   ├── lib/         # Utility functions and services
+│   │   └── pages/       # Page components
+├── server/              # Backend Express application
+│   ├── src/
+│   │   ├── routes/     # API route handlers
+│   │   ├── services/   # Business logic
+│   │   └── lib/        # Utility functions
+├── shared/             # Shared code between frontend and backend
+│   ├── schema.ts      # Database schema definitions
+│   └── types/         # Shared TypeScript types
+├── migrations/        # Database migrations
+└── supabase/         # Supabase configurations and functions
+```
+
+## 🔧 Technical Architecture
+
+### Database Schema
+- Uses Drizzle ORM with PostgreSQL
+- UUID-based primary keys for all user-related tables
+- Strict foreign key relationships
+- Proper indexing for performance
+
+### Authentication Flow
+1. Wallet Connection (Phantom, etc.)
+2. Public key verification
+3. Profile creation/verification
+4. Session management via Supabase
+
+### State Management
+- React Context for global state
+- TanStack Query for server state
+- Local storage for persistent data
+
+## 🛡️ Best Practices
+
+### Database
+- Always use UUIDs for user-related primary keys
+- Include created_at and updated_at timestamps
+- Add appropriate indexes for frequently queried columns
+- Use proper foreign key constraints
+
+### Authentication
+- Always verify wallet signatures
+- Store auth_provider_id for wallet addresses
+- Handle wallet disconnection gracefully
+- Implement proper session management
+
+### API Development
+- Use TypeScript for type safety
+- Implement proper error handling
+- Follow RESTful conventions
+- Document all endpoints
+
+### Frontend Development
+- Use TypeScript strictly
+- Follow component composition patterns
+- Implement proper error boundaries
+- Use proper loading states
+
 ## 🎯 Core Features
 
 ### 🐱 Lucky Cat Fortune System
@@ -32,20 +154,6 @@ Crypto Tea House is your daily ritual for crypto fortune and rewards on the Sola
 - Community leaderboards and statistics
 - Referral program for bonus rewards
 
-## 🚀 Getting Started
-
-### Prerequisites
-- A Solana wallet (Phantom, Solflare, etc.)
-- SOL for transaction fees
-- Modern web browser
-
-### Quick Start
-1. Visit [Crypto Tea House](https://cryptoteahouse.com)
-2. Connect your Solana wallet
-3. Pull the Lucky Cat's paw for your daily fortune
-4. Collect tickets and enter prize draws
-5. Track your rewards in the dashboard
-
 ## 💡 How It Works
 
 1. **Daily Fortune Pull**
@@ -69,22 +177,49 @@ Crypto Tea House is your daily ritual for crypto fortune and rewards on the Sola
 ## 🛠️ Technical Stack
 
 ### Frontend
-- React + TypeScript
-- Tailwind CSS
-- Framer Motion
-- Shadcn UI
-- TanStack Query
+- React 18+ with TypeScript
+- Vite for build tooling
+- Tailwind CSS for styling
+- Framer Motion for animations
+- Shadcn UI for components
+- TanStack Query for data fetching
+- Solana Web3.js for blockchain interaction
 
 ### Backend
-- Express.js
-- PostgreSQL
-- Drizzle ORM
-- Solana Web3.js
+- Express.js with TypeScript
+- PostgreSQL with Drizzle ORM
+- Supabase for auth and storage
+- WebSocket for real-time updates
+
+### Testing
+- Vitest for unit testing
+- Playwright for E2E testing
+- MSW for API mocking
 
 ### Infrastructure
-- Replit deployment
-- PostgreSQL database
-- Solana blockchain integration
+- Vercel for frontend deployment
+- Supabase for database and auth
+- GitHub Actions for CI/CD
+
+## 🔍 Common Issues & Solutions
+
+### Database Migration Issues
+- Always check schema.ts for proper types
+- Use consistent ID types (UUID)
+- Run migrations in development first
+- Backup data before migrations
+
+### Wallet Connection Issues
+- Check for proper RPC endpoints
+- Verify wallet adapter configuration
+- Handle network changes
+- Implement proper error handling
+
+### Authentication Issues
+- Verify Supabase configuration
+- Check auth_provider_id column
+- Handle session expiration
+- Implement proper error messages
 
 ## 📚 Documentation
 

@@ -23,6 +23,7 @@ export const profiles = pgTable("profiles", {
   bio: text("bio"),
   profile_picture_url: text("profile_picture_url"),
   is_profile_complete: boolean("is_profile_complete").notNull().default(false),
+  auth_provider_id: text("auth_provider_id"),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -99,7 +100,7 @@ export const insertActivitySchema = createInsertSchema(activities).pick({
 // Ticket Purchases Table
 export const ticketPurchases = pgTable("ticket_purchases", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
   type: text("type").notNull(), // daily, weekly, monthly, yearly
   quantity: integer("quantity").notNull(),
   amount: text("amount").notNull(), // Amount in SOL
@@ -150,8 +151,8 @@ export const insertSettingSchema = createInsertSchema(settings).pick({
 // Referrals Table
 export const referrals = pgTable("referrals", {
   id: serial("id").primaryKey(),
-  referrerId: integer("referrer_id").notNull().references(() => users.id),
-  referredId: integer("referred_id").notNull().references(() => users.id),
+  referrerId: uuid("referrer_id").notNull().references(() => users.id),
+  referredId: uuid("referred_id").notNull().references(() => users.id),
   reward: text("reward"), // Amount in SOL
   status: text("status").notNull().default("pending"), // pending, completed
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -166,7 +167,7 @@ export const insertReferralSchema = createInsertSchema(referrals).pick({
 
 // User Stats Table
 export const userStats = pgTable("user_stats", {
-  userId: integer("user_id").primaryKey().references(() => users.id),
+  userId: uuid("user_id").primaryKey().references(() => users.id),
   
   // Current ticket counts
   currentDailyTickets: integer("current_daily_tickets").notNull().default(0),
