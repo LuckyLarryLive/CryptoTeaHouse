@@ -26,13 +26,14 @@ export const profiles = pgTable("profiles", {
   auth_provider_id: text("auth_provider_id"),
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
+  handle: text("handle").notNull().unique(),
 });
 
 export const insertProfileSchema = createInsertSchema(profiles).pick({
   display_name: true,
+  handle: true,
   bio: true,
   profile_picture_url: true,
-  is_profile_complete: true,
 });
 
 // Tickets Table

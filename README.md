@@ -407,3 +407,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 Built with ❤️ for the crypto community
+
+## Authentication
+
+Crypto Tea House now supports **only wallet-based authentication**. Users must connect a Solana-compatible wallet (such as Phantom or Solflare) to sign up and log in. All other sign-in methods (email/password, Google, Twitter, Discord) have been removed for enhanced security and simplicity.

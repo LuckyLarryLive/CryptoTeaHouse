@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 
 interface ProfileFormData {
   displayName: string;
+  handle: string;
   email: string;
   bio: string;
   profilePicture: File | null;
@@ -20,10 +21,35 @@ export default function CompleteProfile() {
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [formData, setFormData] = useState<ProfileFormData>({
     displayName: '',
+    handle: '',
     email: '',
     bio: '',
     profilePicture: null
   });
+
+  // Handle handle validation
+  const [handleError, setHandleError] = useState<string | null>(null);
+  const [handleChecking, setHandleChecking] = useState(false);
+
+  const validateHandle = async (handle: string) => {
+    if (!/^[a-z0-9_]+$/.test(handle)) {
+      setHandleError('Handle must be lowercase letters, numbers, or underscores only.');
+      return false;
+    }
+    setHandleChecking(true);
+    const { data: existing, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('handle', handle)
+      .single();
+    setHandleChecking(false);
+    if (existing) {
+      setHandleError('This handle is already taken.');
+      return false;
+    }
+    setHandleError(null);
+    return true;
+  };
 
   useEffect(() => {
     // Check for temporary wallet data
@@ -59,25 +85,17 @@ export default function CompleteProfile() {
     }
 
     try {
-      // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: `${user.publicKey.slice(0, 16)}!`, // Add special char to meet password requirements
-        options: {
-          data: {
-            wallet_address: user.publicKey
-          }
-        }
-      });
+      setIsLoading(true);
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("No user data returned from signup");
+      // Get the current user
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      if (userError || !currentUser) throw new Error("Failed to get current user");
 
       // Handle profile picture upload if selected
       let profilePictureUrl: string | undefined = undefined;
       if (formData.profilePicture) {
         const fileExt = formData.profilePicture.name.split('.').pop()?.toLowerCase() || 'png';
-        const fileName = `${authData.user.id}/profile.${fileExt}`;
+        const fileName = `${currentUser.id}/profile.${fileExt}`;
         
         try {
           // Validate file type
@@ -126,10 +144,11 @@ export default function CompleteProfile() {
       // Create profile
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert([
+        .upsert([
           {
-            id: authData.user.id,
+            id: currentUser.id,
             display_name: formData.displayName,
+            handle: formData.handle,
             email: formData.email,
             bio: formData.bio,
             profile_picture_url: profilePictureUrl || null,
@@ -143,21 +162,13 @@ export default function CompleteProfile() {
         .single();
 
       if (profileError) {
-        if (profileError.code === '23505') { // Unique violation
-          toast({
-            title: "Error",
-            description: "A profile with this wallet address already exists. Please try logging in instead.",
-            variant: "destructive"
-          });
-          setLocation('/');
-          return;
-        }
+        console.error('Profile creation error:', profileError);
         throw profileError;
       }
 
       // Update wallet context with new user data
       setUser({
-        id: authData.user.id,
+        id: currentUser.id,
         publicKey: user.publicKey,
         email: formData.email,
         username: formData.displayName,
@@ -175,9 +186,11 @@ export default function CompleteProfile() {
       console.error("Error creating profile:", error);
       toast({
         title: "Error",
-        description: "Failed to create profile. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create profile. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -298,6 +311,29 @@ export default function CompleteProfile() {
                 className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="Enter your display name"
               />
+            </div>
+
+            {/* Handle */}
+            <div className="space-y-3">
+              <label htmlFor="handle" className="block text-sm font-medium text-white">
+                @Handle
+              </label>
+              <input
+                type="text"
+                id="handle"
+                value={formData.handle}
+                onChange={async (e) => {
+                  const value = e.target.value;
+                  setFormData(prev => ({ ...prev, handle: value }));
+                  if (value.length > 2) await validateHandle(value);
+                  else setHandleError('Handle must be at least 3 characters.');
+                }}
+                required
+                className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Choose your unique @handle"
+              />
+              {handleChecking && <p className="text-sm text-light-400">Checking handle...</p>}
+              {handleError && <p className="text-sm text-red-400">{handleError}</p>}
             </div>
 
             {/* Bio */}

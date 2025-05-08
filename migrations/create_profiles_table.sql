@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   profile_picture_url text,
   is_profile_complete boolean NOT NULL DEFAULT false,
   created_at timestamp NOT NULL DEFAULT now(),
-  updated_at timestamp NOT NULL DEFAULT now()
+  updated_at timestamp NOT NULL DEFAULT now(),
+  handle text NOT NULL UNIQUE CHECK (handle ~ '^[a-z0-9_]+$')
 );
 
 -- Add RLS policies

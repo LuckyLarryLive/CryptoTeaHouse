@@ -6,7 +6,6 @@ import { useWallet } from '@/contexts/WalletContext';
 
 interface ProfileFormData {
   displayName: string;
-  email: string;
   newsletterOptIn: boolean;
   bio: string;
   profilePicture: File | null;
@@ -19,14 +18,13 @@ export default function Preferences() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ProfileFormData>({
     displayName: '',
-    email: '',
     newsletterOptIn: false,
     bio: '',
     profilePicture: null,
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof ProfileFormData, string>>>({});
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [currentProfilePicture, setCurrentProfilePicture] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof ProfileFormData, string>>>({});
 
   // Check if user is authenticated
   useEffect(() => {
@@ -49,7 +47,6 @@ export default function Preferences() {
         if (profile) {
           setFormData({
             displayName: profile.display_name || '',
-            email: profile.email || '',
             newsletterOptIn: profile.newsletter_opt_in || false,
             bio: profile.bio || '',
             profilePicture: null,
@@ -88,25 +85,6 @@ export default function Preferences() {
 
       if (existingUser) {
         newErrors.displayName = 'This display name is already taken';
-      }
-    }
-
-    // Validate email
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    } else {
-      // Check if email is unique (excluding current user)
-      const { data: existingEmail } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', formData.email)
-        .neq('id', user?.id)
-        .single();
-
-      if (existingEmail) {
-        newErrors.email = 'This email is already registered';
       }
     }
 
@@ -226,7 +204,6 @@ export default function Preferences() {
         .from('profiles')
         .update({
           display_name: formData.displayName,
-          email: formData.email,
           bio: formData.bio || null,
           profile_picture_url: profilePictureUrl,
           newsletter_opt_in: formData.newsletterOptIn,
@@ -281,27 +258,6 @@ export default function Preferences() {
             />
             {errors.displayName && (
               <p className="mt-1 text-sm text-red-500">{errors.displayName}</p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-light-300">
-              Email *
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className={`mt-1 block w-full rounded-md bg-dark-800 border ${
-                errors.email ? 'border-red-500' : 'border-gray-700'
-              } text-light-300 px-3 py-2`}
-              placeholder="Your email address"
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-500">{errors.email}</p>
             )}
           </div>
 
