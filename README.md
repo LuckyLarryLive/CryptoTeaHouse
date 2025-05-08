@@ -221,6 +221,140 @@ cryptoteahouse/
 - Handle session expiration
 - Implement proper error messages
 
+### Common HTTP Error Codes
+
+#### 406 Not Acceptable
+- **Cause**: Supabase API request headers not properly configured
+- **Solution**: 
+  ```typescript
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    }
+  });
+  ```
+
+#### 400 Bad Request
+- **Cause**: Invalid request format or missing required fields
+- **Common Scenarios**:
+  - Profile picture upload failing
+  - Invalid UUID format
+  - Missing required fields in request body
+- **Solution**: 
+  - Verify request payload structure
+  - Check file upload format and size
+  - Ensure all required fields are present
+
+#### 500 Internal Server Error
+- **Common Scenarios**:
+  - API endpoints failing (/api/draws/upcoming)
+  - User activities endpoint failing
+  - Ticket queries failing
+- **Solution**:
+  1. Check server logs for detailed error messages
+  2. Verify database connection
+  3. Ensure proper error handling in API routes
+  4. Check for missing environment variables
+
+### Storage Issues
+- **Profile Picture Upload Failures**:
+  - Verify storage bucket permissions
+  - Check file size limits
+  - Ensure proper file type validation
+  - Verify storage bucket exists in Supabase
+
+### API Endpoint Troubleshooting
+
+#### User Activities Endpoint
+```typescript
+// Example of proper error handling
+app.get('/api/user/:userId/activities', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!userId || userId === '0') {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    // ... rest of the handler
+  } catch (error) {
+    console.error('Activities endpoint error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+```
+
+#### Ticket Queries
+```typescript
+// Example of proper ticket query handling
+app.get('/api/user/:userId/tickets', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!userId || userId === '0') {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    // ... rest of the handler
+  } catch (error) {
+    console.error('Tickets endpoint error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+```
+
+### Development Environment Setup
+
+#### Required Environment Variables
+```bash
+# Supabase Configuration
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+DATABASE_URL=your_database_url
+
+# Solana Configuration
+VITE_SOLANA_RPC_URL=your_solana_rpc_url
+VITE_SOLANA_NETWORK=devnet  # or mainnet-beta
+
+# Storage Configuration
+VITE_STORAGE_URL=your_storage_url
+VITE_STORAGE_KEY=your_storage_key
+
+# API Configuration
+VITE_API_URL=your_api_url
+```
+
+#### Supabase Setup Checklist
+1. Create project in Supabase dashboard
+2. Enable authentication providers
+3. Create storage buckets:
+   ```sql
+   -- Run in Supabase SQL editor
+   INSERT INTO storage.buckets (id, name, public) 
+   VALUES ('profile-pictures', 'profile-pictures', true);
+   ```
+4. Set up storage policies:
+   ```sql
+   -- Allow authenticated users to upload profile pictures
+   CREATE POLICY "Users can upload their own profile pictures"
+   ON storage.objects FOR INSERT
+   TO authenticated
+   WITH CHECK (bucket_id = 'profile-pictures' AND auth.uid()::text = (storage.foldername(name))[1]);
+   ```
+
+### Debugging Tips
+1. Enable detailed logging:
+   ```typescript
+   // In your Supabase client configuration
+   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    debug: true
+   });
+   ```
+
+2. Check network requests in browser dev tools
+3. Verify Supabase dashboard for:
+   - Authentication settings
+   - Database tables and policies
+   - Storage bucket configurations
+   - API endpoints and functions
+
 ## 📚 Documentation
 
 For more detailed information, please refer to:
