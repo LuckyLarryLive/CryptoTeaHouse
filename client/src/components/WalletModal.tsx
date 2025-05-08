@@ -38,12 +38,16 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogPortal>
-        <DialogContent className="bg-dark-800/95 backdrop-blur-md border border-dark-700 text-white w-full max-w-md">
+        <DialogContent 
+          className="bg-dark-800/95 backdrop-blur-md border border-dark-700 text-white w-full max-w-md"
+          aria-labelledby="wallet-modal-title"
+          aria-describedby="wallet-modal-description"
+        >
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
+            <DialogTitle id="wallet-modal-title" className="text-2xl font-bold">
               {isSignUp ? "Create Account" : "Sign In"}
             </DialogTitle>
-            <DialogDescription className="text-light-300">
+            <DialogDescription id="wallet-modal-description" className="text-light-300">
               Choose your preferred wallet to {isSignUp ? "sign up" : "sign in"}
             </DialogDescription>
           </DialogHeader>

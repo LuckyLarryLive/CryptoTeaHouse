@@ -121,10 +121,14 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       } else {
         console.log("[WalletContext] No existing user found, creating new user...");
         
+        // Generate a UUID for the new user
+        const userId = crypto.randomUUID();
+        
         // First create a user record
         const { data: newUser, error: userError } = await supabase
           .from('users')
           .insert({
+            id: userId,
             public_key: publicKeyStr,
             email: '', // Empty email for now, will be set during profile completion
             created_at: new Date().toISOString()
@@ -148,10 +152,10 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         const { data: newProfile, error: profileError } = await supabase
           .from('profiles')
           .insert({
-            id: newUser.id,
+            id: userId,
             auth_provider_id: publicKeyStr,
             display_name: '', // Will be set during profile completion
-            handle: `user_${newUser.id.slice(0, 8)}`, // Temporary handle
+            handle: `user_${userId.slice(0, 8)}`, // Temporary handle
             is_profile_complete: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -180,7 +184,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         
         // Set temporary user state
         setUser({
-          id: newUser.id,
+          id: userId,
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
