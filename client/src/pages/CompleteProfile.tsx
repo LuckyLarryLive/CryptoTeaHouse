@@ -114,6 +114,27 @@ export default function CompleteProfile() {
 
       console.log('Created user in Supabase Auth:', authData.user.id);
 
+      // Create user record first
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          public_key: publicKey,
+          last_login_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        });
+
+      if (userError) {
+        console.error('User creation error:', userError);
+        // If user creation fails, we should clean up the auth user
+        try {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+        } catch (deleteError) {
+          console.error('Failed to clean up auth user:', deleteError);
+        }
+        throw userError;
+      }
+
       // Create profile with the new user's ID
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -174,7 +195,7 @@ export default function CompleteProfile() {
 
       // Update wallet context with new user data
       setUser({
-        id: parseInt(authData.user.id),
+        id: authData.user.id,
         publicKey,
         email: formData.email,
         name: formData.displayName,

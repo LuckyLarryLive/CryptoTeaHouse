@@ -9,7 +9,7 @@ interface WalletContextType {
   connected: boolean;
   publicKey: string | null;
   user: { 
-    id: number; 
+    id: string;
     publicKey: string; 
     username?: string;
     email?: string;
@@ -71,7 +71,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser({
-          id: parseInt(session.user.id),
+          id: session.user.id,
           publicKey: session.user.email || '',
           email: session.user.email,
           name: session.user.user_metadata.full_name,
@@ -88,7 +88,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         setUser({
-          id: parseInt(session.user.id),
+          id: session.user.id,
           publicKey: session.user.email || '',
           email: session.user.email,
           name: session.user.user_metadata.full_name,
@@ -165,7 +165,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         setPublicKey(publicKeyStr);
         setConnected(true);
         setUser({
-          id: 0, // Temporary ID
+          id: "0", // Temporary ID
           publicKey: publicKeyStr,
           provider: 'wallet'
         });

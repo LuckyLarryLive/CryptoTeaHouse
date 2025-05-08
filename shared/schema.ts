@@ -1,10 +1,10 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey, decimal, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Users Table
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   publicKey: text("public_key").notNull().unique(),
   lastLoginAt: timestamp("last_login_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -17,7 +17,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 // Tickets Table
 export const tickets = pgTable("tickets", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
   type: text("type").notNull(), // daily, weekly, monthly, yearly
   quantity: integer("quantity").notNull().default(1),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -48,7 +48,7 @@ export const insertDrawSchema = createInsertSchema(draws).pick({
 // Winners Table
 export const winners = pgTable("winners", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
   drawId: integer("draw_id").notNull().references(() => draws.id),
   transactionSignature: text("transaction_signature"), // Solana transaction ID
   prizeClaimed: boolean("prize_claimed").notNull().default(false),
@@ -64,7 +64,7 @@ export const insertWinnerSchema = createInsertSchema(winners).pick({
 // Activities Table
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
   type: text("type").notNull(), // pull, reward, ticket_earned
   details: jsonb("details"), // flexible JSON data
   createdAt: timestamp("created_at").notNull().defaultNow(),
