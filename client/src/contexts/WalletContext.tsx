@@ -171,21 +171,21 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
         console.log("Successfully created new user:", newUser);
 
-        // First create the auth user
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        // Create auth user with public key as password
+        const { data: authData, error: authError } = await supabase.auth.signUp({
           email: `wallet_${publicKeyStr.toLowerCase()}@auth.local`,
           password: publicKeyStr,
           options: {
             data: {
               public_key: publicKeyStr,
-              provider: 'wallet'
+              wallet_type: 'phantom'
             }
           }
         });
 
-        if (signUpError) {
-          console.error("Error creating auth user:", JSON.stringify(signUpError, null, 2));
-          throw signUpError;
+        if (authError) {
+          console.error("Error creating auth user:", JSON.stringify(authError, null, 2));
+          throw authError;
         }
 
         // Then create the profile

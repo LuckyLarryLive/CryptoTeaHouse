@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey, decimal, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey, decimal, uuid, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -6,7 +6,7 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: uuid("id").primaryKey(),
   publicKey: text("public_key").notNull().unique(),
-  email: text("email").notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
   lastLoginAt: timestamp("last_login_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
