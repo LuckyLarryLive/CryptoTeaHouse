@@ -139,23 +139,74 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
   // Authenticate user with the server
   const authenticateUser = async (publicKeyStr: string) => {
     try {
-      // For wallet authentication, we'll use the public key as the identifier
-      const { data: { user }, error } = await supabase.auth.signInWithPassword({
-        email: `${publicKeyStr}@wallet.local`,
-        password: publicKeyStr, // In a real app, you'd want to hash this
-      });
+      // First check if a user exists with this wallet address
+      const { data: existingUser, error: existingUserError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('auth_provider_id', publicKeyStr)
+        .single();
 
-      if (error) throw error;
+      if (existingUserError && existingUserError.code !== 'PGRST116') {
+        throw existingUserError;
+      }
 
-      if (user) {
+      if (!existingUser) {
+        // Create new user
+        const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+          email: `${publicKeyStr}@wallet.local`,
+          password: publicKeyStr,
+          options: {
+            data: {
+              publicKey: publicKeyStr,
+            }
+          }
+        });
+
+        if (signUpError) throw signUpError;
+        if (!user) throw new Error('No user data received after sign up');
+
+        // Create initial profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            auth_provider: 'wallet',
+            auth_provider_id: publicKeyStr,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (profileError) throw profileError;
+
         setUser({
           id: parseInt(user.id),
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
+
+        // Redirect to complete profile page for new users
+        window.location.href = '/complete-profile';
+        return user;
+      } else {
+        // Sign in existing user
+        const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
+          email: `${publicKeyStr}@wallet.local`,
+          password: publicKeyStr,
+        });
+
+        if (signInError) throw signInError;
+        if (!user) throw new Error('No user data received after sign in');
+
+        setUser({
+          id: parseInt(user.id),
+          publicKey: publicKeyStr,
+          provider: 'wallet'
+        });
+
+        // Redirect to dashboard for existing users
+        window.location.href = '/dashboard';
         return user;
       }
-      throw new Error('No user data received');
     } catch (error) {
       console.error("Authentication error:", error);
       throw error;
