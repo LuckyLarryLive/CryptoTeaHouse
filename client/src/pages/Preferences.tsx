@@ -54,7 +54,7 @@ export default function Preferences() {
             bio: profile.bio || '',
             profilePicture: null,
           });
-          setCurrentProfilePicture(profile.profile_picture);
+          setCurrentProfilePicture(profile.profile_picture_url);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -167,37 +167,57 @@ export default function Preferences() {
 
       // Upload new profile picture if selected
       if (formData.profilePicture) {
-        // First validate the file
-        const validationFormData = new FormData();
-        validationFormData.append('file', formData.profilePicture);
+        const fileExt = formData.profilePicture.name.split('.').pop()?.toLowerCase() || 'png';
+        const fileName = `${user?.id}/profile.${fileExt}`;
+        
+        try {
+          // Validate file type
+          const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+          if (!allowedTypes.includes(formData.profilePicture.type)) {
+            throw new Error('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
+          }
 
-        const { data: validationData, error: validationError } = await supabase.functions.invoke('validate-upload', {
-          body: validationFormData
-        });
+          // Validate file size (max 5MB)
+          const maxSize = 5 * 1024 * 1024; // 5MB
+          if (formData.profilePicture.size > maxSize) {
+            throw new Error('File size too large. Maximum size is 5MB.');
+          }
 
-        if (validationError) {
-          throw new Error(validationError.message);
-        }
-
-        if (!validationData.success) {
-          throw new Error('File validation failed');
-        }
-
-        // If validation passes, upload the file
-        const fileExt = formData.profilePicture.name.split('.').pop();
-        const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('profile-pictures')
-          .upload(fileName, formData.profilePicture);
-
-        if (uploadError) throw uploadError;
-        profilePictureUrl = uploadData.path;
-
-        // Delete old profile picture if it exists
-        if (currentProfilePicture) {
-          await supabase.storage
+          // Upload the file
+          const { data: uploadData, error: uploadError } = await supabase.storage
             .from('profile-pictures')
-            .remove([currentProfilePicture]);
+            .upload(fileName, formData.profilePicture, {
+              cacheControl: '3600',
+              upsert: true,
+              contentType: formData.profilePicture.type
+            });
+
+          if (uploadError) throw uploadError;
+
+          // Get the public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('profile-pictures')
+            .getPublicUrl(fileName);
+            
+          profilePictureUrl = publicUrl;
+          console.log('Profile picture uploaded successfully:', publicUrl);
+
+          // Delete old profile picture if it exists
+          if (currentProfilePicture) {
+            const oldFileName = currentProfilePicture.split('/').pop();
+            if (oldFileName) {
+              await supabase.storage
+                .from('profile-pictures')
+                .remove([`${user?.id}/${oldFileName}`]);
+            }
+          }
+        } catch (error) {
+          console.error('Error uploading profile picture:', error);
+          toast({
+            title: "Warning",
+            description: error instanceof Error ? error.message : "Failed to upload profile picture. Continuing with profile update...",
+            variant: "destructive"
+          });
         }
       }
 
@@ -208,7 +228,7 @@ export default function Preferences() {
           display_name: formData.displayName,
           email: formData.email,
           bio: formData.bio || null,
-          profile_picture: profilePictureUrl,
+          profile_picture_url: profilePictureUrl,
           newsletter_opt_in: formData.newsletterOptIn,
           updated_at: new Date().toISOString(),
         })
@@ -217,17 +237,17 @@ export default function Preferences() {
       if (profileError) throw profileError;
 
       toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been successfully updated!',
+        title: "Success",
+        description: "Profile updated successfully!"
       });
 
       setLocation('/dashboard');
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to update profile. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -293,7 +313,7 @@ export default function Preferences() {
             <div className="mt-1 flex items-center space-x-4">
               <div className="relative">
                 <img
-                  src={previewUrl || currentProfilePicture || '/default-avatar.png'}
+                  src={previewUrl || currentProfilePicture || '/images/default-avatar.png'}
                   alt="Profile preview"
                   className="h-20 w-20 rounded-full object-cover"
                 />

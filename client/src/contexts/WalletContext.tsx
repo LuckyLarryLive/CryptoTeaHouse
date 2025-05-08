@@ -145,11 +145,12 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       // First check if a user exists with this wallet address
       const { data: existingUser, error: existingUserError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, display_name, email, profile_picture_url, auth_provider_id')
         .eq('auth_provider_id', publicKeyStr)
-        .single();
+        .maybeSingle();
 
-      if (existingUserError && existingUserError.code !== 'PGRST116') {
+      if (existingUserError) {
+        console.error('Error checking existing user:', existingUserError);
         throw existingUserError;
       }
 
@@ -175,7 +176,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         return;
       }
 
-      // Existing user found
+      // User exists, set the user data
       setUser({
         id: existingUser.id,
         publicKey: publicKeyStr,
@@ -186,15 +187,12 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         provider: 'wallet'
       });
 
+      // Set connection state
       setPublicKey(publicKeyStr);
       setConnected(true);
 
-      // Redirect based on profile completion status
-      if (!existingUser.is_profile_complete) {
-        setLocation('/complete-profile');
-      } else {
-        setLocation('/dashboard');
-      }
+      // Redirect to dashboard
+      setLocation('/dashboard');
     } catch (error) {
       console.error('Authentication error:', error);
       throw error;

@@ -95,15 +95,29 @@ export default function CompleteProfile() {
       // Handle profile picture upload if selected
       let profilePictureUrl: string | undefined = undefined;
       if (formData.profilePicture) {
-        const fileExt = formData.profilePicture.name.split('.').pop() || 'png';
+        const fileExt = formData.profilePicture.name.split('.').pop()?.toLowerCase() || 'png';
         const fileName = `${authData.user.id}/profile.${fileExt}`;
         
         try {
-          const { error: uploadError } = await supabase.storage
+          // Validate file type
+          const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+          if (!allowedTypes.includes(formData.profilePicture.type)) {
+            throw new Error('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
+          }
+
+          // Validate file size (max 5MB)
+          const maxSize = 5 * 1024 * 1024; // 5MB
+          if (formData.profilePicture.size > maxSize) {
+            throw new Error('File size too large. Maximum size is 5MB.');
+          }
+
+          // Upload the file
+          const { data: uploadData, error: uploadError } = await supabase.storage
             .from('profile-pictures')
             .upload(fileName, formData.profilePicture, {
               cacheControl: '3600',
-              upsert: true
+              upsert: true,
+              contentType: formData.profilePicture.type
             });
 
           if (uploadError) {
@@ -111,14 +125,20 @@ export default function CompleteProfile() {
             throw uploadError;
           }
 
+          // Get the public URL
           const { data: { publicUrl } } = supabase.storage
             .from('profile-pictures')
             .getPublicUrl(fileName);
             
           profilePictureUrl = publicUrl;
+          console.log('Profile picture uploaded successfully:', publicUrl);
         } catch (error) {
           console.error('Error uploading profile picture:', error);
-          // Continue with profile creation even if picture upload fails
+          toast({
+            title: "Warning",
+            description: error instanceof Error ? error.message : "Failed to upload profile picture. Continuing with profile creation...",
+            variant: "destructive"
+          });
         }
       }
 
@@ -130,7 +150,7 @@ export default function CompleteProfile() {
             id: authData.user.id,
             display_name: formData.displayName,
             bio: formData.bio,
-            profile_picture_url: profilePictureUrl,
+            profile_picture_url: profilePictureUrl || null,
             is_profile_complete: true,
             auth_provider_id: user.publicKey,
             created_at: new Date().toISOString(),

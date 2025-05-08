@@ -19,13 +19,23 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true
   },
   global: {
     headers: {
       'Accept': 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-Client-Info': 'supabase-js/2.0.0'
     }
+  },
+  db: {
+    schema: 'public'
   }
+});
+
+// Add error handling for Supabase client
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Supabase auth state changed:', event, session?.user?.id);
 });
 
 /**
