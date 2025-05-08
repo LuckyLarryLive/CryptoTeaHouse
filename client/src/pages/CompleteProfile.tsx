@@ -10,6 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface ProfileFormData {
   displayName: string;
+  email: string;
   bio: string;
   profilePicture: File | null;
 }
@@ -23,6 +24,7 @@ export default function CompleteProfile() {
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [formData, setFormData] = useState<ProfileFormData>({
     displayName: '',
+    email: '',
     bio: '',
     profilePicture: null
   });
@@ -63,6 +65,21 @@ export default function CompleteProfile() {
 
       const { publicKey } = JSON.parse(tempWalletData);
 
+      // Check if email is already registered
+      const { data: existingEmail, error: emailCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', formData.email)
+        .single();
+
+      if (emailCheckError && emailCheckError.code !== 'PGRST116') {
+        throw emailCheckError;
+      }
+
+      if (existingEmail) {
+        throw new Error('This email address is already registered');
+      }
+
       // Check if wallet address is already registered
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
@@ -80,7 +97,7 @@ export default function CompleteProfile() {
 
       // Create user in Supabase Auth first
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: `${publicKey}@wallet.local`,
+        email: formData.email,
         password: crypto.randomUUID(), // Generate a random password
         options: {
           data: {
@@ -101,6 +118,7 @@ export default function CompleteProfile() {
         .from('profiles')
         .insert({
           id: authData.user.id,
+          email: formData.email,
           display_name: formData.displayName,
           bio: formData.bio,
           auth_provider: 'wallet',
@@ -144,6 +162,7 @@ export default function CompleteProfile() {
       setUser({
         id: parseInt(authData.user.id),
         publicKey,
+        email: formData.email,
         name: formData.displayName,
         provider: 'wallet'
       });
@@ -207,6 +226,25 @@ export default function CompleteProfile() {
               </div>
               <p className="text-sm text-light-300">
                 This is your connected wallet address
+              </p>
+            </div>
+
+            {/* Email */}
+            <div className="space-y-3">
+              <label htmlFor="email" className="block text-sm font-medium text-white">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                required
+                className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Enter your email address"
+              />
+              <p className="text-sm text-light-300">
+                This will be used for account notifications and communications
               </p>
             </div>
 
