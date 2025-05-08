@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import { createClient } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 // Initialize Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -60,6 +61,7 @@ interface TempWalletData {
 }
 
 export const WalletContextProvider = ({ children }: WalletContextProviderProps) => {
+  const [, setLocation] = useLocation();
   const [connected, setConnected] = useState(false);
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [wallet, setWallet] = useState<any>(null);
@@ -174,7 +176,7 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
         });
 
         // Redirect to complete profile page for new users
-        window.location.href = '/complete-profile';
+        setLocation('/complete-profile');
         return;
       } else {
         // Existing user found
@@ -194,7 +196,7 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
             provider: 'wallet'
           });
 
-          window.location.href = '/complete-profile';
+          setLocation('/complete-profile');
           return;
         }
 
@@ -209,7 +211,7 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
         setConnected(true);
 
         // Redirect to dashboard for existing users
-        window.location.href = '/dashboard';
+        setLocation('/dashboard');
         return;
       }
     } catch (error) {
