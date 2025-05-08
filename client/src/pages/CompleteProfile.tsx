@@ -79,7 +79,7 @@ export default function CompleteProfile() {
         .insert([
           {
             id: authData.user.id,
-            publicKey: user.publicKey,
+            public_key: user.publicKey,
             email: formData.email
           }
         ])
@@ -119,11 +119,10 @@ export default function CompleteProfile() {
         .insert([
           {
             id: authData.user.id,
-            username: formData.displayName,
-            displayName: formData.displayName,
+            display_name: formData.displayName,
             bio: formData.bio,
-            profilePictureUrl: profilePictureUrl,
-            isProfileComplete: true
+            profile_picture_url: profilePictureUrl,
+            is_profile_complete: true
           }
         ]);
 

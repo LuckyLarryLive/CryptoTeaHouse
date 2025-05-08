@@ -16,6 +16,24 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
 });
 
+// Profiles Table
+export const profiles = pgTable("profiles", {
+  id: uuid("id").primaryKey().references(() => users.id),
+  display_name: text("display_name").notNull(),
+  bio: text("bio"),
+  profile_picture_url: text("profile_picture_url"),
+  is_profile_complete: boolean("is_profile_complete").notNull().default(false),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  updated_at: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertProfileSchema = createInsertSchema(profiles).pick({
+  display_name: true,
+  bio: true,
+  profile_picture_url: true,
+  is_profile_complete: true,
+});
+
 // Tickets Table
 export const tickets = pgTable("tickets", {
   id: serial("id").primaryKey(),
