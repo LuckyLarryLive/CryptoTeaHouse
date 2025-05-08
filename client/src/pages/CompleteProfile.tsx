@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@/contexts/WalletContext';
-import { supabase } from '@/lib/supabase'; // Import shared instance
+import { supabase } from '@/lib/supabase';
 
 interface ProfileFormData {
   displayName: string;
@@ -49,38 +49,46 @@ export default function CompleteProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.publicKey) return;
+    if (!user?.publicKey) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet first",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
-      setIsLoading(true);
-      const publicKeyStr = user.publicKey.toString();
+      // Generate a valid email for Supabase Auth
+      const authEmail = `${user.publicKey.slice(0, 8)}@cryptoteahouse.com`;
+      const password = `${user.publicKey.slice(0, 16)}!`; // Add special char to meet password requirements
 
       // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: `${publicKeyStr}@wallet.local`,
-        password: publicKeyStr,
+        email: authEmail,
+        password,
         options: {
           data: {
-            public_key: publicKeyStr,
-            provider: 'wallet'
+            publicKey: user.publicKey
           }
         }
       });
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error('No user data returned from auth signup');
-
-      console.log('Created user in Supabase Auth:', authData.user.id);
+      if (!authData.user) throw new Error("No user data returned from signup");
 
       // Create user record in users table
-      const { error: userError } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
-        .insert({
-          id: authData.user.id,
-          public_key: publicKeyStr,
-          last_login_at: new Date().toISOString(),
-          created_at: new Date().toISOString()
-        });
+        .insert([
+          {
+            id: authData.user.id,
+            publicKey: user.publicKey,
+            email: authEmail
+          }
+        ])
+        .select()
+        .single();
 
       if (userError) {
         // Clean up auth user if user creation fails
@@ -88,84 +96,71 @@ export default function CompleteProfile() {
         throw userError;
       }
 
-      // Upload profile picture if selected
+      // Handle profile picture upload if selected
       let profilePictureUrl: string | undefined = undefined;
       if (formData.profilePicture) {
-        try {
-          const fileExt = formData.profilePicture.name.split('.').pop();
-          const fileName = `profile.${fileExt}`;
-          const filePath = `${authData.user.id}/${fileName}`;
+        const fileExt = formData.profilePicture.name.split('.').pop() || 'png';
+        const fileName = `${authData.user.id}/profile.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('profile-pictures')
+          .upload(fileName, formData.profilePicture, {
+            cacheControl: '3600',
+            upsert: true
+          });
 
-          const { error: uploadError } = await supabase.storage
+        if (!uploadError) {
+          const { data } = supabase.storage
             .from('profile-pictures')
-            .upload(filePath, formData.profilePicture, {
-              cacheControl: '3600',
-              upsert: true
-            });
-
-          if (uploadError) {
-            console.error('Error uploading profile picture:', uploadError);
-            // Continue with profile creation even if picture upload fails
-          } else {
-            const { data: { publicUrl } } = supabase.storage
-              .from('profile-pictures')
-              .getPublicUrl(filePath);
-            profilePictureUrl = publicUrl;
-          }
-        } catch (uploadError) {
-          console.error('Error handling profile picture:', uploadError);
-          // Continue with profile creation even if picture upload fails
+            .getPublicUrl(fileName);
+          profilePictureUrl = data.publicUrl;
         }
       }
 
       // Create profile
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
-          id: authData.user.id,
-          auth_provider_id: publicKeyStr,
-          username: formData.displayName,
-          email: formData.email,
-          name: formData.displayName,
-          picture: profilePictureUrl,
-          is_profile_complete: true,
-          created_at: new Date().toISOString()
-        });
+        .insert([
+          {
+            id: authData.user.id,
+            username: formData.displayName,
+            displayName: formData.displayName,
+            bio: formData.bio,
+            profilePictureUrl: profilePictureUrl,
+            isProfileComplete: true
+          }
+        ]);
 
       if (profileError) {
-        // Clean up auth user and user record if profile creation fails
-        await supabase.auth.admin.deleteUser(authData.user.id);
+        // Clean up if profile creation fails
         await supabase.from('users').delete().eq('id', authData.user.id);
+        await supabase.auth.admin.deleteUser(authData.user.id);
         throw profileError;
       }
 
       // Update wallet context with new user data
       setUser({
         id: authData.user.id,
-        publicKey: publicKeyStr,
+        publicKey: user.publicKey,
+        email: authEmail,
         username: formData.displayName,
-        email: formData.email,
         name: formData.displayName,
         picture: profilePictureUrl,
         provider: 'wallet'
       });
 
       toast({
-        title: "Profile Created",
-        description: "Your profile has been created successfully!",
+        title: "Success",
+        description: "Profile created successfully!"
       });
-
-      // Redirect to dashboard
       setLocation('/dashboard');
     } catch (error) {
-      console.error('Error creating profile:', error);
+      console.error("Error creating profile:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create profile",
-        variant: "destructive",
+        description: "Failed to create profile. Please try again.",
+        variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
