@@ -150,7 +150,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
         // Set up the auth session
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: `${publicKeyStr.toLowerCase()}@wallet.solana`,
+          email: `wallet_${publicKeyStr.toLowerCase()}@auth.local`,
           password: publicKeyStr // Using the public key as the password
         });
 

@@ -92,7 +92,7 @@ export default function CompleteProfile() {
       if (userError || !currentUser) {
         // If no auth session, try to sign in with the wallet
         const { data: { user: authUser, session }, error: signInError } = await supabase.auth.signInWithPassword({
-          email: `${user.publicKey}@wallet.local`,
+          email: `wallet_${user.publicKey}@auth.local`,
           password: user.publicKey
         });
 
