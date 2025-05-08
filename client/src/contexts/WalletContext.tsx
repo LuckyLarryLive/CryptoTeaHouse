@@ -142,7 +142,52 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   // Authenticate user with the server
   const authenticateUser = async (publicKeyStr: string) => {
     try {
-      // First check if a user exists with this wallet address
+      // First authenticate with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: `${publicKeyStr}@wallet.local`,
+        password: publicKeyStr,
+      });
+
+      if (authError) {
+        // If user doesn't exist, create a new one
+        if (authError.message.includes('Invalid login credentials')) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: `${publicKeyStr}@wallet.local`,
+            password: publicKeyStr,
+            options: {
+              data: {
+                wallet_address: publicKeyStr,
+              }
+            }
+          });
+
+          if (signUpError) throw signUpError;
+          if (!signUpData.user) throw new Error('No user data received after sign up');
+
+          // Store temporary wallet data in localStorage
+          const tempWalletData: TempWalletData = {
+            publicKey: publicKeyStr,
+            timestamp: Date.now()
+          };
+          localStorage.setItem('tempWalletData', JSON.stringify(tempWalletData));
+
+          // Set temporary connection state
+          setPublicKey(publicKeyStr);
+          setConnected(true);
+          setUser({
+            id: signUpData.user.id,
+            publicKey: publicKeyStr,
+            provider: 'wallet'
+          });
+
+          // Redirect to complete profile page for new users
+          setLocation('/complete-profile');
+          return;
+        }
+        throw authError;
+      }
+
+      // Now check if a profile exists
       const { data: existingUser, error: existingUserError } = await supabase
         .from('profiles')
         .select('id, display_name, email, profile_picture_url, auth_provider_id')
@@ -166,7 +211,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         setPublicKey(publicKeyStr);
         setConnected(true);
         setUser({
-          id: "0", // Temporary ID
+          id: authData.user.id,
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
