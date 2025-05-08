@@ -107,6 +107,18 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
       if (existingProfile) {
         console.log("[WalletContext] Existing user found:", existingProfile);
+        
+        // Try to sign in with the wallet auth email
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: `wallet_${publicKeyStr.toLowerCase()}@auth.local`,
+          password: publicKeyStr
+        });
+
+        if (authError) {
+          console.error("Error signing in existing user:", authError);
+          throw authError;
+        }
+
         // User exists, set the user data
         setUser({
           id: existingProfile.id,
@@ -117,7 +129,18 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           picture: existingProfile.profile_picture_url,
           provider: 'wallet'
         });
-        setLocation('/dashboard');
+
+        if (!existingProfile.is_profile_complete) {
+          // Store temporary wallet data for profile completion
+          localStorage.setItem('tempWalletData', JSON.stringify({
+            publicKey: publicKeyStr,
+            provider: 'wallet',
+            timestamp: Date.now()
+          }));
+          setLocation('/complete-profile');
+        } else {
+          setLocation('/dashboard');
+        }
       } else {
         console.log("[WalletContext] No existing user found, creating new user...");
         
