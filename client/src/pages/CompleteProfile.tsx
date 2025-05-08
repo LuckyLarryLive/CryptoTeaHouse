@@ -115,7 +115,7 @@ export default function CompleteProfile() {
       console.log('Created user in Supabase Auth:', authData.user.id);
 
       // Create profile with the new user's ID
-      const { error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .insert({
           id: authData.user.id,
@@ -134,32 +134,41 @@ export default function CompleteProfile() {
       if (profileError) {
         console.error('Profile creation error:', profileError);
         // If profile creation fails, we should clean up the auth user
-        await supabase.auth.admin.deleteUser(authData.user.id);
+        try {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+        } catch (deleteError) {
+          console.error('Failed to clean up auth user:', deleteError);
+        }
         throw profileError;
       }
 
       // Upload profile picture if provided
       if (formData.profilePicture) {
-        const fileExt = formData.profilePicture.name.split('.').pop();
-        const filePath = `${authData.user.id}/profile.${fileExt}`;
+        try {
+          const fileExt = formData.profilePicture.name.split('.').pop();
+          const filePath = `${authData.user.id}/profile.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('profile-pictures')
-          .upload(filePath, formData.profilePicture);
-
-        if (uploadError) {
-          console.error('Error uploading profile picture:', uploadError);
-          // Don't throw, continue with profile creation
-        } else {
-          // Update profile with picture URL
-          const { data: { publicUrl } } = supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('profile-pictures')
-            .getPublicUrl(filePath);
+            .upload(filePath, formData.profilePicture);
 
-          await supabase
-            .from('profiles')
-            .update({ picture_url: publicUrl })
-            .eq('id', authData.user.id);
+          if (uploadError) {
+            console.error('Error uploading profile picture:', uploadError);
+            // Don't throw, continue with profile creation
+          } else {
+            // Update profile with picture URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('profile-pictures')
+              .getPublicUrl(filePath);
+
+            await supabase
+              .from('profiles')
+              .update({ picture_url: publicUrl })
+              .eq('id', authData.user.id);
+          }
+        } catch (uploadError) {
+          console.error('Error handling profile picture:', uploadError);
+          // Don't throw, continue with profile creation
         }
       }
 

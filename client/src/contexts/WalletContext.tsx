@@ -1,13 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Define the context types
 interface WalletContextType {
@@ -60,7 +55,7 @@ interface TempWalletData {
   timestamp: number;
 }
 
-export const WalletContextProvider = ({ children }: WalletContextProviderProps) => {
+export function WalletProvider({ children }: WalletContextProviderProps) {
   const [, setLocation] = useLocation();
   const [connected, setConnected] = useState(false);
   const [publicKey, setPublicKey] = useState<string | null>(null);
@@ -435,4 +430,4 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
       {children}
     </WalletContext.Provider>
   );
-};
+}
