@@ -53,6 +53,12 @@ interface WalletContextProviderProps {
   children: ReactNode;
 }
 
+// Add this type for temporary wallet data
+interface TempWalletData {
+  publicKey: string;
+  timestamp: number;
+}
+
 export const WalletContextProvider = ({ children }: WalletContextProviderProps) => {
   const [connected, setConnected] = useState(false);
   const [publicKey, setPublicKey] = useState<string | null>(null);
@@ -142,7 +148,7 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
       // First check if a user exists with this wallet address
       const { data: existingUser, error: existingUserError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, auth_provider_id, is_profile_complete')
         .eq('auth_provider_id', publicKeyStr)
         .single();
 
@@ -151,71 +157,80 @@ export const WalletContextProvider = ({ children }: WalletContextProviderProps) 
       }
 
       if (!existingUser) {
-        // Create new user with just the wallet info, no profile yet
-        const { data: { user }, error: signUpError } = await supabase.auth.signUp({
-          email: `${publicKeyStr}@wallet.local`,
-          password: publicKeyStr,
-          options: {
-            data: {
-              publicKey: publicKeyStr,
-              provider: 'wallet',
-              isProfileComplete: false
-            }
-          }
-        });
+        // Store temporary wallet data in localStorage
+        const tempWalletData: TempWalletData = {
+          publicKey: publicKeyStr,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('tempWalletData', JSON.stringify(tempWalletData));
 
-        if (signUpError) throw signUpError;
-        if (!user) throw new Error('No user data received after sign up');
-
+        // Set temporary connection state
+        setPublicKey(publicKeyStr);
+        setConnected(true);
         setUser({
-          id: parseInt(user.id),
+          id: 0, // Temporary ID
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
 
         // Redirect to complete profile page for new users
         window.location.href = '/complete-profile';
-        return user;
+        return;
       } else {
-        // Sign in existing user
-        const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
-          email: `${publicKeyStr}@wallet.local`,
-          password: publicKeyStr,
-        });
+        // Existing user found
+        if (!existingUser.is_profile_complete) {
+          // Profile incomplete - treat as new registration
+          const tempWalletData: TempWalletData = {
+            publicKey: publicKeyStr,
+            timestamp: Date.now()
+          };
+          localStorage.setItem('tempWalletData', JSON.stringify(tempWalletData));
+          
+          setPublicKey(publicKeyStr);
+          setConnected(true);
+          setUser({
+            id: existingUser.id,
+            publicKey: publicKeyStr,
+            provider: 'wallet'
+          });
 
-        if (signInError) throw signInError;
-        if (!user) throw new Error('No user data received after sign in');
-
-        // Check if profile exists
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_profile_complete')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError && profileError.code !== 'PGRST116') {
-          throw profileError;
+          window.location.href = '/complete-profile';
+          return;
         }
 
+        // Profile complete - normal sign in
         setUser({
-          id: parseInt(user.id),
+          id: existingUser.id,
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
 
-        // Redirect based on profile existence and completion status
-        if (!profile || !profile.is_profile_complete) {
-          window.location.href = '/complete-profile';
-        } else {
-          window.location.href = '/dashboard';
-        }
-        return user;
+        setPublicKey(publicKeyStr);
+        setConnected(true);
+
+        // Redirect to dashboard for existing users
+        window.location.href = '/dashboard';
+        return;
       }
     } catch (error) {
-      console.error("Authentication error:", error);
+      console.error('Authentication error:', error);
       throw error;
     }
   };
+
+  // Clean up temporary wallet data on unmount
+  useEffect(() => {
+    return () => {
+      const tempWalletData = localStorage.getItem('tempWalletData');
+      if (tempWalletData) {
+        const data = JSON.parse(tempWalletData);
+        // Clean up if older than 1 hour
+        if (Date.now() - data.timestamp > 3600000) {
+          localStorage.removeItem('tempWalletData');
+        }
+      }
+    };
+  }, []);
 
   // Connect to wallet
   const connect = async (walletName: string) => {
