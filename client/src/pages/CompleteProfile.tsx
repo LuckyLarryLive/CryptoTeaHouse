@@ -87,6 +87,12 @@ export default function CompleteProfile() {
     try {
       setIsLoading(true);
 
+      // Debug: Log session and user before profile operations
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log('[Debug] supabase.auth.getSession() result:', sessionData, sessionError);
+      const { data: userData, error: getUserError } = await supabase.auth.getUser();
+      console.log('[Debug] supabase.auth.getUser() result:', userData, getUserError);
+
       // Get the current user
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
       if (userError || !currentUser) throw new Error("Failed to get current user");
