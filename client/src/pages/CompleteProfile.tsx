@@ -49,173 +49,121 @@ export default function CompleteProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    if (!user?.publicKey) return;
 
     try {
-      // Get temporary wallet data
-      const tempWalletData = localStorage.getItem('tempWalletData');
-      if (!tempWalletData) {
-        throw new Error('No temporary wallet data found');
-      }
+      setIsLoading(true);
+      const publicKeyStr = user.publicKey.toString();
 
-      const { publicKey } = JSON.parse(tempWalletData);
-
-      // Check if email is already registered
-      const { data: existingEmail, error: emailCheckError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', formData.email)
-        .maybeSingle();
-
-      if (emailCheckError) {
-        console.error('Email check error:', emailCheckError);
-        throw new Error('Failed to check email availability');
-      }
-
-      if (existingEmail) {
-        throw new Error('This email address is already registered');
-      }
-
-      // Check if wallet address is already registered
-      const { data: existingProfile, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('auth_provider_id', publicKey)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Wallet check error:', checkError);
-        throw new Error('Failed to check wallet availability');
-      }
-
-      if (existingProfile) {
-        throw new Error('This wallet address is already registered');
-      }
-
-      // Create user in Supabase Auth first
+      // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: crypto.randomUUID(), // Generate a random password
+        email: `${publicKeyStr}@wallet.local`,
+        password: publicKeyStr,
         options: {
           data: {
-            public_key: publicKey,
-            auth_provider: 'wallet',
-            auth_provider_id: publicKey
+            public_key: publicKeyStr,
+            provider: 'wallet'
           }
         }
       });
 
-      if (authError) {
-        console.error('Auth error:', authError);
-        throw authError;
-      }
-      if (!authData.user) throw new Error('No user data received after sign up');
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('No user data returned from auth signup');
 
       console.log('Created user in Supabase Auth:', authData.user.id);
 
-      // Create user record first
+      // Create user record in users table
       const { error: userError } = await supabase
         .from('users')
         .insert({
           id: authData.user.id,
-          public_key: publicKey,
+          public_key: publicKeyStr,
           last_login_at: new Date().toISOString(),
           created_at: new Date().toISOString()
         });
 
       if (userError) {
-        console.error('User creation error:', userError);
-        // If user creation fails, we should clean up the auth user
-        try {
-          await supabase.auth.admin.deleteUser(authData.user.id);
-        } catch (deleteError) {
-          console.error('Failed to clean up auth user:', deleteError);
-        }
+        // Clean up auth user if user creation fails
+        await supabase.auth.admin.deleteUser(authData.user.id);
         throw userError;
       }
 
-      // Create profile with the new user's ID
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          email: formData.email,
-          display_name: formData.displayName,
-          bio: formData.bio,
-          auth_provider: 'wallet',
-          auth_provider_id: publicKey,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          is_profile_complete: true
-        })
-        .select()
-        .single();
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        // If profile creation fails, we should clean up the auth user
-        try {
-          await supabase.auth.admin.deleteUser(authData.user.id);
-        } catch (deleteError) {
-          console.error('Failed to clean up auth user:', deleteError);
-        }
-        throw profileError;
-      }
-
-      // Upload profile picture if provided
+      // Upload profile picture if selected
+      let profilePictureUrl: string | undefined = undefined;
       if (formData.profilePicture) {
         try {
           const fileExt = formData.profilePicture.name.split('.').pop();
-          const filePath = `${authData.user.id}/profile.${fileExt}`;
+          const fileName = `profile.${fileExt}`;
+          const filePath = `${authData.user.id}/${fileName}`;
 
           const { error: uploadError } = await supabase.storage
             .from('profile-pictures')
-            .upload(filePath, formData.profilePicture);
+            .upload(filePath, formData.profilePicture, {
+              cacheControl: '3600',
+              upsert: true
+            });
 
           if (uploadError) {
             console.error('Error uploading profile picture:', uploadError);
-            // Don't throw, continue with profile creation
+            // Continue with profile creation even if picture upload fails
           } else {
-            // Update profile with picture URL
             const { data: { publicUrl } } = supabase.storage
               .from('profile-pictures')
               .getPublicUrl(filePath);
-
-            await supabase
-              .from('profiles')
-              .update({ picture_url: publicUrl })
-              .eq('id', authData.user.id);
+            profilePictureUrl = publicUrl;
           }
         } catch (uploadError) {
           console.error('Error handling profile picture:', uploadError);
-          // Don't throw, continue with profile creation
+          // Continue with profile creation even if picture upload fails
         }
+      }
+
+      // Create profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          auth_provider_id: publicKeyStr,
+          username: formData.displayName,
+          email: formData.email,
+          name: formData.displayName,
+          picture: profilePictureUrl,
+          is_profile_complete: true,
+          created_at: new Date().toISOString()
+        });
+
+      if (profileError) {
+        // Clean up auth user and user record if profile creation fails
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        await supabase.from('users').delete().eq('id', authData.user.id);
+        throw profileError;
       }
 
       // Update wallet context with new user data
       setUser({
         id: authData.user.id,
-        publicKey,
+        publicKey: publicKeyStr,
+        username: formData.displayName,
         email: formData.email,
         name: formData.displayName,
+        picture: profilePictureUrl,
         provider: 'wallet'
       });
 
-      // Clear temporary wallet data
-      localStorage.removeItem('tempWalletData');
-
-      // Show success message
       toast({
-        title: "Success",
-        description: "Profile created successfully!",
+        title: "Profile Created",
+        description: "Your profile has been created successfully!",
       });
 
       // Redirect to dashboard
       setLocation('/dashboard');
-    } catch (err) {
-      console.error('Error creating profile:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create profile');
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create profile",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
