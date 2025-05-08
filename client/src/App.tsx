@@ -11,7 +11,7 @@ import Roadmap from "@/pages/Roadmap";
 import Legal from "@/pages/Legal";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { useWallet, WalletContextProvider } from "@/contexts/WalletContext";
+import { WalletProvider, useWallet } from "@/contexts/WalletContext";
 import AgeVerification from "@/components/AgeVerification";
 import AuthCallback from "@/pages/AuthCallback";
 import CompleteProfile from '@/pages/CompleteProfile';
@@ -47,13 +47,13 @@ function Router() {
 
 function App() {
   return (
-    <WalletContextProvider>
+    <WalletProvider>
       <TooltipProvider>
         <Toaster />
         <AgeVerification />
         <Router />
       </TooltipProvider>
-    </WalletContextProvider>
+    </WalletProvider>
   );
 }
 
