@@ -19,7 +19,7 @@ interface WalletContextType {
     email?: string;
     name?: string;
     picture?: string;
-    provider?: 'wallet' | 'google';
+    provider?: 'wallet' | 'google' | 'email';
   } | null;
   connecting: boolean;
   isConnecting: boolean;

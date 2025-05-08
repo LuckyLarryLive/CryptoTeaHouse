@@ -6,6 +6,7 @@ import { useWallet } from "@/contexts/WalletContext";
 import { Link } from "wouter";
 import { initGoogleAuth, handleGoogleSignIn, isGoogleInitialized } from "@/lib/googleAuth";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 interface WalletModalProps {
   isOpen: boolean;
@@ -20,9 +21,16 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
 
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState<{
+    username?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
 
   // Initialize Google Auth when modal opens
   useEffect(() => {
@@ -50,20 +58,141 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
     }
   };
 
+  const validateForm = async () => {
+    const errors: typeof formErrors = {};
+
+    // Validate username
+    if (!username.trim()) {
+      errors.username = 'Username is required';
+    } else if (username.length < 3) {
+      errors.username = 'Username must be at least 3 characters';
+    } else {
+      // Check if username is unique
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('display_name', username)
+        .single();
+
+      if (existingUser) {
+        errors.username = 'This username is already taken';
+      }
+    }
+
+    // Validate email
+    if (!email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'Invalid email format';
+    } else {
+      // Check if email is unique
+      const { data: existingEmail } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (existingEmail) {
+        errors.email = 'This email is already registered';
+      }
+    }
+
+    // Validate password
+    if (!password) {
+      errors.password = 'Password is required';
+    } else if (password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
+    }
+
+    // Validate confirm password
+    if (isSignUp && password !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleUsernamePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      if (isSignUp) {
-        // TODO: Implement sign up logic
-        console.log("Sign up:", { username, password, confirmPassword });
-      } else {
-        // TODO: Implement sign in logic
-        console.log("Sign in:", { username, password });
+      const isValid = await validateForm();
+      if (!isValid) {
+        setIsLoading(false);
+        return;
       }
-      onClose();
+
+      if (isSignUp) {
+        // Sign up with email/password
+        const { data: { user, session }, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              username,
+            }
+          }
+        });
+
+        if (signUpError) throw signUpError;
+        if (!user) throw new Error('No user data received after sign up');
+
+        // Create initial profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email: email,
+            display_name: username,
+            auth_provider: 'email',
+            auth_provider_id: user.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (profileError) throw profileError;
+
+        toast({
+          title: "Success",
+          description: "Account created successfully! Please check your email to verify your account.",
+        });
+
+        onClose();
+        window.location.href = '/complete-profile';
+      } else {
+        // Sign in with email/password
+        const { data: { user, session }, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) throw signInError;
+        if (!user) throw new Error('No user data received after sign in');
+
+        setUser({
+          id: parseInt(user.id),
+          publicKey: user.email || '',
+          email: user.email,
+          name: user.user_metadata.username || user.email,
+          provider: 'email'
+        });
+
+        toast({
+          title: "Success",
+          description: "Successfully signed in",
+        });
+
+        onClose();
+        window.location.href = '/dashboard';
+      }
     } catch (error) {
       console.error(isSignUp ? "Sign up error:" : "Sign in error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Authentication failed",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -86,11 +215,31 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
             picture: user.picture,
             provider: 'google'
           });
+
+          // Check if user has completed their profile
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', user.id)
+            .single();
+
+          if (profileError && profileError.code !== 'PGRST116') {
+            throw profileError;
+          }
+
+          // If no profile exists, redirect to profile completion
+          if (!profile) {
+            onClose();
+            window.location.href = '/complete-profile';
+          } else {
+            onClose();
+            window.location.href = '/dashboard';
+          }
+
           toast({
             title: "Success",
             description: "Successfully signed in with Google",
           });
-          onClose();
         }
       } catch (error) {
         console.error("Google sign-in error:", error);
@@ -130,26 +279,51 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
                   placeholder="Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="bg-dark-700 border-dark-600 text-white"
+                  className={`bg-dark-700 border-dark-600 text-white ${formErrors.username ? 'border-red-500' : ''}`}
                   required
                 />
+                {formErrors.username && (
+                  <p className="text-sm text-red-500">{formErrors.username}</p>
+                )}
+                
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`bg-dark-700 border-dark-600 text-white ${formErrors.email ? 'border-red-500' : ''}`}
+                  required
+                />
+                {formErrors.email && (
+                  <p className="text-sm text-red-500">{formErrors.email}</p>
+                )}
+
                 <Input
                   type="password"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-dark-700 border-dark-600 text-white"
+                  className={`bg-dark-700 border-dark-600 text-white ${formErrors.password ? 'border-red-500' : ''}`}
                   required
                 />
+                {formErrors.password && (
+                  <p className="text-sm text-red-500">{formErrors.password}</p>
+                )}
+
                 {isSignUp && (
-                  <Input
-                    type="password"
-                    placeholder="Confirm Password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="bg-dark-700 border-dark-600 text-white"
-                    required
-                  />
+                  <>
+                    <Input
+                      type="password"
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={`bg-dark-700 border-dark-600 text-white ${formErrors.confirmPassword ? 'border-red-500' : ''}`}
+                      required
+                    />
+                    {formErrors.confirmPassword && (
+                      <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
+                    )}
+                  </>
                 )}
               </div>
               <Button

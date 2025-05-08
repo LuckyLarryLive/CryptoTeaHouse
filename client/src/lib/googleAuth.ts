@@ -118,32 +118,70 @@ export const handleGoogleSignIn = async (): Promise<GoogleUser> => {
             });
             const userInfo = await userInfoResponse.json();
 
-            // Send the token and user info to your server
-            const serverResponse = await fetch('/api/auth/google', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                access_token: response.access_token,
-                user_info: userInfo
-              })
-            });
+            // Check if user already exists with this email
+            const { data: existingUser, error: existingUserError } = await supabase
+              .from('profiles')
+              .select('id, email')
+              .eq('email', userInfo.email)
+              .single();
 
-            if (!serverResponse.ok) {
-              throw new Error('Server authentication failed');
+            if (existingUserError && existingUserError.code !== 'PGRST116') {
+              throw existingUserError;
             }
 
-            const { user, token } = await serverResponse.json();
-            
+            if (existingUser) {
+              // User exists, sign them in
+              const { data: { user, session }, error: signInError } = await supabase.auth.signInWithIdToken({
+                provider: 'google',
+                token: response.access_token,
+                nonce: 'nonce',
+              });
+
+              if (signInError) throw signInError;
+              if (!user) throw new Error('No user data received after sign in');
+
+              return {
+                id: user.id,
+                email: user.email!,
+                name: user.user_metadata.full_name || user.email!,
+                picture: user.user_metadata.avatar_url || '',
+              };
+            }
+
+            // New user, sign up
+            const { data: { user, session }, error: signUpError } = await supabase.auth.signInWithIdToken({
+              provider: 'google',
+              token: response.access_token,
+              nonce: 'nonce',
+            });
+
+            if (signUpError) throw signUpError;
+            if (!user) throw new Error('No user data received after sign up');
+
+            // Create initial profile
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                email: user.email,
+                display_name: user.user_metadata.full_name || user.email,
+                profile_picture: user.user_metadata.avatar_url,
+                auth_provider: 'google',
+                auth_provider_id: user.id,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+
+            if (profileError) throw profileError;
+
             // Store the token
-            localStorage.setItem('auth_token', token);
-            
+            localStorage.setItem('auth_token', session?.access_token || '');
+
             return {
               id: user.id,
-              email: user.email,
-              name: user.name,
-              picture: user.picture,
+              email: user.email!,
+              name: user.user_metadata.full_name || user.email!,
+              picture: user.user_metadata.avatar_url || '',
             };
           } catch (error) {
             logWithPersistence('[GoogleAuth] Error in callback:', error);
