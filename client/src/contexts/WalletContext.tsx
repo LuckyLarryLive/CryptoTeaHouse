@@ -121,25 +121,26 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       } else {
         console.log("[WalletContext] No existing user found, creating new user...");
         
-        // Create a new Supabase auth user
-        const { data: { user: authUser, session }, error: signUpError } = await supabase.auth.signUp({
-          email: `${publicKeyStr}@wallet.local`,
-          password: publicKeyStr, // Using public key as password
-          options: {
-            data: {
-              public_key: publicKeyStr,
-              provider: 'wallet'
-            }
-          }
-        });
+        // Create a new user profile directly without email auth
+        const { data: newProfile, error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            auth_provider: 'wallet',
+            auth_provider_id: publicKeyStr,
+            public_key: publicKeyStr,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
-        if (signUpError) {
-          console.error("Error creating auth user:", signUpError);
-          throw signUpError;
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          throw profileError;
         }
 
-        if (!authUser) {
-          throw new Error("Failed to create auth user");
+        if (!newProfile) {
+          throw new Error("Failed to create profile");
         }
 
         // Store temporary wallet data
@@ -151,7 +152,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         
         // Set temporary user state
         setUser({
-          id: authUser.id,
+          id: newProfile.id,
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
