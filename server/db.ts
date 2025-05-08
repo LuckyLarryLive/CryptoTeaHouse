@@ -8,5 +8,11 @@ export const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KE
   ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
   : null;
 
-// Create Postgres connection for Drizzle (for future use)
-export const db = null;
+// Create Postgres connection for Drizzle
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL environment variable is not set');
+}
+
+const client = postgres(connectionString);
+export const db = drizzle(client, { schema });

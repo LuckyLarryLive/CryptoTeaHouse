@@ -98,18 +98,27 @@ export default function CompleteProfile() {
         const fileExt = formData.profilePicture.name.split('.').pop() || 'png';
         const fileName = `${authData.user.id}/profile.${fileExt}`;
         
-        const { error: uploadError } = await supabase.storage
-          .from('profile-pictures')
-          .upload(fileName, formData.profilePicture, {
-            cacheControl: '3600',
-            upsert: true
-          });
+        try {
+          const { error: uploadError } = await supabase.storage
+            .from('profile-pictures')
+            .upload(fileName, formData.profilePicture, {
+              cacheControl: '3600',
+              upsert: true
+            });
 
-        if (!uploadError) {
-          const { data } = supabase.storage
+          if (uploadError) {
+            console.error('Profile picture upload error:', uploadError);
+            throw uploadError;
+          }
+
+          const { data: { publicUrl } } = supabase.storage
             .from('profile-pictures')
             .getPublicUrl(fileName);
-          profilePictureUrl = data.publicUrl;
+            
+          profilePictureUrl = publicUrl;
+        } catch (error) {
+          console.error('Error uploading profile picture:', error);
+          // Continue with profile creation even if picture upload fails
         }
       }
 
@@ -122,7 +131,10 @@ export default function CompleteProfile() {
             display_name: formData.displayName,
             bio: formData.bio,
             profile_picture_url: profilePictureUrl,
-            is_profile_complete: true
+            is_profile_complete: true,
+            auth_provider_id: user.publicKey,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
         ]);
 

@@ -1,10 +1,11 @@
 import { 
-  users, draws, tickets, winners, activities,
+  users, draws, tickets, winners, activities, userStats,
   type User, type InsertUser,
   type Ticket, type InsertTicket,
   type Draw, type InsertDraw,
   type Winner, type InsertWinner,
-  type Activity, type InsertActivity
+  type Activity, type InsertActivity,
+  type UserStat
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -64,16 +65,32 @@ export class DatabaseStorage implements IStorage {
   
   // Ticket methods
   async getTickets(userId: string): Promise<{ type: string, count: number }[]> {
-    const ticketCounts = await db
-      .select({
-        type: tickets.type,
-        count: sql<number>`SUM(${tickets.quantity})`.as("count")
-      })
-      .from(tickets)
-      .where(eq(tickets.userId, userId))
-      .groupBy(tickets.type);
-    
-    return ticketCounts;
+    try {
+      const stats = await db
+        .select()
+        .from(userStats)
+        .where(eq(userStats.userId, userId))
+        .single();
+
+      if (!stats) {
+        return [
+          { type: "daily", count: 0 },
+          { type: "weekly", count: 0 },
+          { type: "monthly", count: 0 },
+          { type: "yearly", count: 0 }
+        ];
+      }
+
+      return [
+        { type: "daily", count: stats.currentDailyTickets },
+        { type: "weekly", count: stats.currentWeeklyTickets },
+        { type: "monthly", count: stats.currentMonthlyTickets },
+        { type: "yearly", count: stats.currentYearlyTickets }
+      ];
+    } catch (error) {
+      console.error('Error getting tickets:', error);
+      throw error;
+    }
   }
   
   async createTicket(insertTicket: InsertTicket): Promise<Ticket> {
@@ -93,23 +110,28 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getNextDraws(): Promise<{type: string, drawTime: Date}[]> {
-    const currentTime = new Date();
-    
-    const upcomingDraws = await db
-      .select({
-        type: draws.type,
-        drawTime: draws.drawTime
-      })
-      .from(draws)
-      .where(and(
-        eq(draws.status, "pending"),
-        sql`${draws.drawTime} > ${currentTime}`
-      ))
-      .orderBy(draws.drawTime)
-      .groupBy(draws.type, draws.drawTime)
-      .limit(4);
-    
-    return upcomingDraws;
+    try {
+      const currentTime = new Date();
+      
+      const upcomingDraws = await db
+        .select({
+          type: draws.type,
+          drawTime: draws.drawTime
+        })
+        .from(draws)
+        .where(and(
+          eq(draws.status, "pending"),
+          sql`${draws.drawTime} > ${currentTime}`
+        ))
+        .orderBy(draws.drawTime)
+        .groupBy(draws.type, draws.drawTime)
+        .limit(4);
+      
+      return upcomingDraws;
+    } catch (error) {
+      console.error('Error getting next draws:', error);
+      throw error;
+    }
   }
   
   async createDraw(insertDraw: InsertDraw): Promise<Draw> {
@@ -164,14 +186,19 @@ export class DatabaseStorage implements IStorage {
   
   // Activity methods
   async getUserActivities(userId: string, limit: number = 10): Promise<Activity[]> {
-    const activities = await db
-      .select()
-      .from(activities)
-      .where(eq(activities.userId, userId))
-      .orderBy(desc(activities.createdAt))
-      .limit(limit);
-    
-    return activities;
+    try {
+      const activities = await db
+        .select()
+        .from(activities)
+        .where(eq(activities.userId, userId))
+        .orderBy(desc(activities.createdAt))
+        .limit(limit);
+      
+      return activities;
+    } catch (error) {
+      console.error('Error getting user activities:', error);
+      throw error;
+    }
   }
   
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {

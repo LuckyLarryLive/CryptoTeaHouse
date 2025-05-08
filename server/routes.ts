@@ -34,19 +34,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.params.userId;
       
-      if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
+      if (!userId || userId === '0') {
+        return res.status(400).json({ message: "Invalid user ID" });
       }
       
-      // Return mock ticket counts
-      const mockTicketCounts = [
-        { type: "daily", count: 0 },
-        { type: "weekly", count: 0 },
-        { type: "monthly", count: 0 },
-        { type: "yearly", count: 0 }
-      ];
-      
-      return res.status(200).json(mockTicketCounts);
+      const tickets = await storage.getTickets(userId);
+      return res.status(200).json(tickets);
     } catch (error) {
       console.error("Get tickets error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -56,14 +49,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get upcoming draws
   app.get("/api/draws/upcoming", async (req: Request, res: Response) => {
     try {
-      // Return mock upcoming draws
-      const mockUpcomingDraws = [
-        { type: "daily", drawTime: new Date(Date.now() + 24 * 60 * 60 * 1000) },
-        { type: "weekly", drawTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-        { type: "monthly", drawTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
-      ];
-      
-      return res.status(200).json(mockUpcomingDraws);
+      const upcomingDraws = await storage.getNextDraws();
+      return res.status(200).json(upcomingDraws);
     } catch (error) {
       console.error("Get upcoming draws error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -134,22 +121,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.params.userId;
       const limit = Number(req.query.limit) || 10;
       
-      if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
+      if (!userId || userId === '0') {
+        return res.status(400).json({ message: "Invalid user ID" });
       }
       
-      // Return mock activities
-      const mockActivities = [
-        {
-          id: 1,
-          userId,
-          type: "pull",
-          details: { message: "Pulled the lucky cat's arm!" },
-          createdAt: new Date()
-        }
-      ];
-      
-      return res.status(200).json(mockActivities);
+      const activities = await storage.getUserActivities(userId, limit);
+      return res.status(200).json(activities);
     } catch (error) {
       console.error("Get activities error:", error);
       return res.status(500).json({ message: "Internal server error" });

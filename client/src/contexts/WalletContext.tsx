@@ -145,7 +145,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       // First check if a user exists with this wallet address
       const { data: existingUser, error: existingUserError } = await supabase
         .from('profiles')
-        .select('id, auth_provider_id, is_profile_complete')
+        .select('*')
         .eq('auth_provider_id', publicKeyStr)
         .single();
 
@@ -173,41 +173,27 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         // Redirect to complete profile page for new users
         setLocation('/complete-profile');
         return;
+      }
+
+      // Existing user found
+      setUser({
+        id: existingUser.id,
+        publicKey: publicKeyStr,
+        email: existingUser.email,
+        username: existingUser.display_name,
+        name: existingUser.display_name,
+        picture: existingUser.profile_picture_url,
+        provider: 'wallet'
+      });
+
+      setPublicKey(publicKeyStr);
+      setConnected(true);
+
+      // Redirect based on profile completion status
+      if (!existingUser.is_profile_complete) {
+        setLocation('/complete-profile');
       } else {
-        // Existing user found
-        if (!existingUser.is_profile_complete) {
-          // Profile incomplete - treat as new registration
-          const tempWalletData: TempWalletData = {
-            publicKey: publicKeyStr,
-            timestamp: Date.now()
-          };
-          localStorage.setItem('tempWalletData', JSON.stringify(tempWalletData));
-          
-          setPublicKey(publicKeyStr);
-          setConnected(true);
-          setUser({
-            id: existingUser.id,
-            publicKey: publicKeyStr,
-            provider: 'wallet'
-          });
-
-          setLocation('/complete-profile');
-          return;
-        }
-
-        // Profile complete - normal sign in
-        setUser({
-          id: existingUser.id,
-          publicKey: publicKeyStr,
-          provider: 'wallet'
-        });
-
-        setPublicKey(publicKeyStr);
-        setConnected(true);
-
-        // Redirect to dashboard for existing users
         setLocation('/dashboard');
-        return;
       }
     } catch (error) {
       console.error('Authentication error:', error);
