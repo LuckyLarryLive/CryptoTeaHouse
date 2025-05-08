@@ -19,7 +19,8 @@ export default function CompleteProfile() {
   const [, setLocation] = useLocation();
   const { user, setUser } = useWallet();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProfileFormData>({
     displayName: '',
     email: '',
@@ -48,53 +49,60 @@ export default function CompleteProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setIsLoading(true);
+    setError(null);
 
     try {
+      // Get temporary wallet data
       const tempWalletData = localStorage.getItem('tempWalletData');
       if (!tempWalletData) {
-        throw new Error('No wallet data found. Please connect your wallet again.');
+        throw new Error('No temporary wallet data found');
       }
 
       const { publicKey } = JSON.parse(tempWalletData);
 
-      // Create the user account
-      const { data: { user: newUser }, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: crypto.randomUUID(), // Generate a random password since we'll use wallet for auth
+      // Create user in Supabase Auth first
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: `${publicKey}@wallet.local`,
+        password: crypto.randomUUID(), // Generate a random password
         options: {
           data: {
             public_key: publicKey,
-            display_name: formData.displayName,
-            provider: 'wallet'
+            auth_provider: 'wallet',
+            auth_provider_id: publicKey
           }
         }
       });
 
-      if (signUpError) throw signUpError;
-      if (!newUser) throw new Error('No user data received after sign up');
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('No user data received after sign up');
 
-      // Create the profile
+      console.log('Created user in Supabase Auth:', authData.user.id);
+
+      // Create profile with the new user's ID
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
-          id: newUser.id,
+          id: authData.user.id, // This should match the user ID from auth
+          email: `${publicKey}@wallet.local`,
+          display_name: formData.displayName,
+          bio: formData.bio,
           auth_provider: 'wallet',
           auth_provider_id: publicKey,
-          display_name: formData.displayName,
-          email: formData.email,
-          bio: formData.bio,
-          is_profile_complete: true,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          is_profile_complete: true
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        throw profileError;
+      }
 
       // Upload profile picture if provided
       if (formData.profilePicture) {
         const fileExt = formData.profilePicture.name.split('.').pop();
-        const filePath = `${newUser.id}/profile.${fileExt}`;
+        const filePath = `${authData.user.id}/profile.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('profile-pictures')
@@ -112,22 +120,23 @@ export default function CompleteProfile() {
           await supabase
             .from('profiles')
             .update({ picture_url: publicUrl })
-            .eq('id', newUser.id);
+            .eq('id', authData.user.id);
         }
       }
 
-      // Update context with new user data
+      // Update wallet context with new user data
       setUser({
-        id: parseInt(newUser.id),
+        id: parseInt(authData.user.id),
         publicKey,
-        email: formData.email,
+        email: `${publicKey}@wallet.local`,
         name: formData.displayName,
         provider: 'wallet'
       });
 
-      // Clean up temporary data
+      // Clear temporary wallet data
       localStorage.removeItem('tempWalletData');
 
+      // Show success message
       toast({
         title: "Success",
         description: "Profile created successfully!",
@@ -135,73 +144,131 @@ export default function CompleteProfile() {
 
       // Redirect to dashboard
       setLocation('/dashboard');
-
-    } catch (error) {
-      console.error('Error creating profile:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create profile",
-        variant: "destructive",
-      });
+    } catch (err) {
+      console.error('Error creating profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create profile');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
+    }
+  };
+
+  // Add profile picture preview
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setFormData(prev => ({ ...prev, profilePicture: file }));
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Complete Your Profile</h1>
-      <form onSubmit={handleSubmit} className="max-w-lg space-y-6">
-        <div>
-          <label className="block text-sm font-medium mb-2">Display Name</label>
-          <input
-            type="text"
-            value={formData.displayName}
-            onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-            className="w-full p-2 border rounded"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium mb-2">Email</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className="w-full p-2 border rounded"
-            required
-          />
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-dark-900 to-dark-800 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-dark-800/50 backdrop-blur-md border border-dark-700 rounded-2xl p-8 shadow-xl">
+          <h1 className="text-3xl font-bold text-white mb-8 text-center">Complete Your Profile</h1>
+          
+          <form onSubmit={handleSubmit} className="space-y-8 max-w-md mx-auto">
+            {/* Profile Picture Upload */}
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-white">
+                Profile Picture
+              </label>
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative w-32 h-32">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Profile preview"
+                      className="w-32 h-32 rounded-full object-cover border-2 border-primary"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-dark-700 flex items-center justify-center border-2 border-dashed border-dark-600">
+                      <svg className="w-12 h-12 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <div className="w-full">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePictureChange}
+                    className="block w-full text-sm text-white
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-primary file:text-dark-900
+                      hover:file:bg-primary/90
+                      cursor-pointer"
+                  />
+                  <p className="mt-2 text-sm text-light-300">
+                    Upload a profile picture (optional)
+                  </p>
+                </div>
+              </div>
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">Bio</label>
-          <textarea
-            value={formData.bio}
-            onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-            className="w-full p-2 border rounded"
-            rows={4}
-          />
-        </div>
+            {/* Display Name */}
+            <div className="space-y-3">
+              <label htmlFor="displayName" className="block text-sm font-medium text-white">
+                Display Name
+              </label>
+              <input
+                type="text"
+                id="displayName"
+                value={formData.displayName}
+                onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
+                required
+                className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Enter your display name"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">Profile Picture</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFormData(prev => ({ ...prev, profilePicture: e.target.files?.[0] || null }))}
-            className="w-full p-2 border rounded"
-          />
-        </div>
+            {/* Bio */}
+            <div className="space-y-3">
+              <label htmlFor="bio" className="block text-sm font-medium text-white">
+                Bio
+              </label>
+              <textarea
+                id="bio"
+                value={formData.bio}
+                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                rows={4}
+                className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Tell us about yourself"
+              />
+            </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-primary text-white py-2 px-4 rounded hover:bg-primary/90 disabled:opacity-50"
-        >
-          {isSubmitting ? 'Creating Profile...' : 'Complete Profile'}
-        </button>
-      </form>
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-sm text-red-400">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-dark-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-dark-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Completing Profile...
+                </div>
+              ) : (
+                'Complete Profile'
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 } 
