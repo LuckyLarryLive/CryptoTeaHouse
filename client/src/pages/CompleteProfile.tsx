@@ -65,32 +65,13 @@ export default function CompleteProfile() {
         password: `${user.publicKey.slice(0, 16)}!`, // Add special char to meet password requirements
         options: {
           data: {
-            publicKey: user.publicKey
+            wallet_address: user.publicKey
           }
         }
       });
 
       if (authError) throw authError;
       if (!authData.user) throw new Error("No user data returned from signup");
-
-      // Create user record in users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .insert([
-          {
-            id: authData.user.id,
-            public_key: user.publicKey,
-            email: formData.email
-          }
-        ])
-        .select()
-        .single();
-
-      if (userError) {
-        // Clean up auth user if user creation fails
-        await supabase.auth.admin.deleteUser(authData.user.id);
-        throw userError;
-      }
 
       // Handle profile picture upload if selected
       let profilePictureUrl: string | undefined = undefined;
@@ -149,6 +130,7 @@ export default function CompleteProfile() {
           {
             id: authData.user.id,
             display_name: formData.displayName,
+            email: formData.email,
             bio: formData.bio,
             profile_picture_url: profilePictureUrl || null,
             is_profile_complete: true,
@@ -160,7 +142,6 @@ export default function CompleteProfile() {
 
       if (profileError) {
         // Clean up if profile creation fails
-        await supabase.from('users').delete().eq('id', authData.user.id);
         await supabase.auth.admin.deleteUser(authData.user.id);
         throw profileError;
       }
