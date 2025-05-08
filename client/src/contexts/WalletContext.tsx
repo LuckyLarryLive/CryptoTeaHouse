@@ -142,59 +142,53 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   // Authenticate user with the server
   const authenticateUser = async (publicKeyStr: string) => {
     try {
-      // First check if a profile exists with this wallet address
-      const { data: existingUser, error: existingUserError } = await supabase
+      console.log("[WalletContext] Attempting server authentication...");
+      
+      // Check if user exists with this wallet address
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id, display_name, email, profile_picture_url, auth_provider_id')
         .eq('auth_provider_id', publicKeyStr)
         .maybeSingle();
 
-      if (existingUserError) {
-        console.error('Error checking existing user:', existingUserError);
-        throw existingUserError;
+      if (profileError) {
+        console.error("Error checking existing user:", profileError);
+        throw profileError;
       }
 
-      if (!existingUser) {
-        // Store temporary wallet data in localStorage
-        const tempWalletData: TempWalletData = {
-          publicKey: publicKeyStr,
-          timestamp: Date.now()
-        };
-        localStorage.setItem('tempWalletData', JSON.stringify(tempWalletData));
-
-        // Set temporary connection state
-        setPublicKey(publicKeyStr);
-        setConnected(true);
+      if (existingProfile) {
+        console.log("[WalletContext] Existing user found:", existingProfile);
+        // User exists, set the user data
         setUser({
-          id: "temp", // Temporary ID until profile is created
+          id: existingProfile.id,
+          publicKey: publicKeyStr,
+          email: existingProfile.email,
+          username: existingProfile.display_name,
+          name: existingProfile.display_name,
+          picture: existingProfile.profile_picture_url,
+          provider: 'wallet'
+        });
+        setLocation('/dashboard');
+      } else {
+        console.log("[WalletContext] No existing user found, redirecting to profile completion");
+        // Store temporary wallet data
+        localStorage.setItem('tempWalletData', JSON.stringify({
+          publicKey: publicKeyStr,
+          provider: 'wallet'
+        }));
+        
+        // Set temporary user state
+        setUser({
+          id: 'temp', // Temporary ID until profile is created
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
-
-        // Redirect to complete profile page for new users
+        
+        // Redirect to complete profile
         setLocation('/complete-profile');
-        return;
       }
-
-      // User exists, set the user data
-      setUser({
-        id: existingUser.id,
-        publicKey: publicKeyStr,
-        email: existingUser.email,
-        username: existingUser.display_name,
-        name: existingUser.display_name,
-        picture: existingUser.profile_picture_url,
-        provider: 'wallet'
-      });
-
-      // Set connection state
-      setPublicKey(publicKeyStr);
-      setConnected(true);
-
-      // Redirect to dashboard
-      setLocation('/dashboard');
     } catch (error) {
-      console.error('Authentication error:', error);
+      console.error("[WalletContext] Authentication error:", error);
       throw error;
     }
   };
