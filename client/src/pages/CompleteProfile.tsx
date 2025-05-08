@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { createClient } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@/contexts/WalletContext';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabase } from '@/lib/supabase'; // Import shared instance
 
 interface ProfileFormData {
   displayName: string;
@@ -70,10 +66,11 @@ export default function CompleteProfile() {
         .from('profiles')
         .select('id')
         .eq('email', formData.email)
-        .single();
+        .maybeSingle();
 
-      if (emailCheckError && emailCheckError.code !== 'PGRST116') {
-        throw emailCheckError;
+      if (emailCheckError) {
+        console.error('Email check error:', emailCheckError);
+        throw new Error('Failed to check email availability');
       }
 
       if (existingEmail) {
@@ -85,10 +82,11 @@ export default function CompleteProfile() {
         .from('profiles')
         .select('id')
         .eq('auth_provider_id', publicKey)
-        .single();
+        .maybeSingle();
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
+      if (checkError) {
+        console.error('Wallet check error:', checkError);
+        throw new Error('Failed to check wallet availability');
       }
 
       if (existingProfile) {
@@ -108,7 +106,10 @@ export default function CompleteProfile() {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw authError;
+      }
       if (!authData.user) throw new Error('No user data received after sign up');
 
       console.log('Created user in Supabase Auth:', authData.user.id);
@@ -126,10 +127,14 @@ export default function CompleteProfile() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           is_profile_complete: true
-        });
+        })
+        .select()
+        .single();
 
       if (profileError) {
         console.error('Profile creation error:', profileError);
+        // If profile creation fails, we should clean up the auth user
+        await supabase.auth.admin.deleteUser(authData.user.id);
         throw profileError;
       }
 
