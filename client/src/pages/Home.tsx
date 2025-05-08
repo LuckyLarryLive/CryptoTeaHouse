@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/contexts/WalletContext";
 import WalletModal from "@/components/WalletModal";
+import LuckyCat from "@/components/LuckyCat";
 
 export default function Home() {
   const [, navigate] = useLocation();
@@ -15,6 +16,10 @@ export default function Home() {
     } else {
       setWalletModalOpen(true);
     }
+  };
+
+  const handlePullComplete = () => {
+    // No-op for home page
   };
   
   return (
@@ -53,86 +58,12 @@ export default function Home() {
             
             <div className="w-full md:w-1/2 flex justify-center relative">
               {/* Tea House Environment Background */}
-              <div className="relative w-full max-w-lg h-96 bg-dark-800 rounded-2xl overflow-hidden shadow-2xl glow">
+              <div className="relative w-full max-w-lg h-[600px] bg-dark-800 rounded-2xl overflow-hidden shadow-2xl glow">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-dark-900/70">
-                  <div className="absolute bottom-0 left-0 right-0 flex justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center">
                     {/* Lucky Cat Animation */}
-                    <div className="relative h-72 w-64">
-                      <svg 
-                        width="256" 
-                        height="300" 
-                        viewBox="0 0 256 300" 
-                        fill="none" 
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-full h-full"
-                      >
-                        {/* Lucky Cat SVG */}
-                        <g>
-                          {/* Body */}
-                          <path d="M128 240C171.019 240 206 205.019 206 162C206 118.981 171.019 84 128 84C84.981 84 50 118.981 50 162C50 205.019 84.981 240 128 240Z" fill="#F6F2EC" />
-                          
-                          {/* Face */}
-                          <circle cx="128" cy="150" r="50" fill="#FFFFFF" />
-                          <circle cx="108" cy="140" r="7" fill="#333333" />
-                          <circle cx="148" cy="140" r="7" fill="#333333" />
-                          <path d="M128 170C137.941 170 146 161.941 146 152H110C110 161.941 118.059 170 128 170Z" fill="#FF9E9E" />
-                          
-                          {/* Ears */}
-                          <path d="M90 100C90 88.954 98.954 80 110 80H120C120 91.046 111.046 100 100 100H90Z" fill="#F6F2EC" />
-                          <path d="M166 100C166 88.954 157.046 80 146 80H136C136 91.046 144.954 100 156 100H166Z" fill="#F6F2EC" />
-                          
-                          {/* Collar */}
-                          <path d="M98 190H158V200C158 211.046 149.046 220 138 220H118C106.954 220 98 211.046 98 200V190Z" fill="#F5A623" />
-                          <circle cx="128" cy="205" r="8" fill="#F6F2EC" />
-                        </g>
-                        
-                        {/* Left Arm (static) */}
-                        <path d="M100 160C89.954 160 80 150.046 80 140V120C80 114.477 84.477 110 90 110C95.523 110 100 114.477 100 120V140C100 145.523 95.523 150 90 150" fill="#F6F2EC" />
-                        
-                        {/* Right Arm (animated) */}
-                        <g className="cat-paw animate-cat-paw">
-                          <path d="M156 160C166.046 160 176 150.046 176 140V120C176 114.477 171.523 110 166 110C160.477 110 156 114.477 156 120V140C156 145.523 160.477 150 166 150" fill="#F6F2EC" />
-                          <circle cx="166" cy="150" r="10" fill="#F6F2EC" />
-                        </g>
-                      </svg>
-                      
-                      {/* Cat's Paw Animation */}
-                      <div className="absolute top-1/4 right-1/4 w-20 h-16 cat-paw animate-cat-paw">
-                        {/* Cat's paw that moves up and down */}
-                        <div className="h-full w-full rounded-full bg-accent/0"></div>
-                      </div>
-                      
-                      {/* Tea Cup with Steam */}
-                      <div className="absolute bottom-5 right-5">
-                        <div className="relative w-16 h-16">
-                          {/* Crypto-branded tea cup */}
-                          <div className="absolute bottom-0 w-full h-8 bg-dark-700 rounded-b-full rounded-t-xl border-t border-accent"></div>
-                          
-                          {/* Steam Particles */}
-                          <div className="absolute bottom-8 left-3 w-10 flex justify-around">
-                            <div className="steam w-2 h-2 bg-light-300/40 rounded-full animate-steam" style={{ "--delay": "0" } as any}></div>
-                            <div className="steam w-2 h-2 bg-light-300/40 rounded-full animate-steam" style={{ "--delay": "0.5" } as any}></div>
-                            <div className="steam w-2 h-2 bg-light-300/40 rounded-full animate-steam" style={{ "--delay": "1" } as any}></div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Floating Crypto Coins */}
-                      <div className="absolute top-1/3 left-4 animate-float" style={{ animationDelay: "0.3s" }}>
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                          <span className="text-xs font-bold">SOL</span>
-                        </div>
-                      </div>
-                      <div className="absolute top-1/4 right-8 animate-float" style={{ animationDelay: "0.7s" }}>
-                        <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">
-                          <span className="text-xs font-bold">$</span>
-                        </div>
-                      </div>
-                      <div className="absolute bottom-1/3 left-8 animate-float" style={{ animationDelay: "1.1s" }}>
-                        <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center">
-                          <span className="text-xs font-bold">◎</span>
-                        </div>
-                      </div>
+                    <div className="w-full max-w-md">
+                      <LuckyCat onPullComplete={handlePullComplete} />
                     </div>
                   </div>
                 </div>

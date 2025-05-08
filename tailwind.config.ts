@@ -73,6 +73,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        dark: {
+          800: "hsl(25 30% 12%)",
+          700: "hsl(25 30% 15%)",
+          900: "hsl(25 30% 8%)",
+        },
+        light: {
+          300: "hsl(34 30% 96%)",
+        },
       },
       keyframes: {
         "accordion-down": {
