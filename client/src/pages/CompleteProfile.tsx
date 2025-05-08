@@ -10,7 +10,6 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface ProfileFormData {
   displayName: string;
-  email: string;
   bio: string;
   profilePicture: File | null;
 }
@@ -21,9 +20,9 @@ export default function CompleteProfile() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string>('');
   const [formData, setFormData] = useState<ProfileFormData>({
     displayName: '',
-    email: '',
     bio: '',
     profilePicture: null
   });
@@ -45,6 +44,9 @@ export default function CompleteProfile() {
       setLocation('/');
       return;
     }
+
+    // Set wallet address from temporary data
+    setWalletAddress(data.publicKey);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,6 +62,21 @@ export default function CompleteProfile() {
       }
 
       const { publicKey } = JSON.parse(tempWalletData);
+
+      // Check if wallet address is already registered
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('auth_provider_id', publicKey)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      if (existingProfile) {
+        throw new Error('This wallet address is already registered');
+      }
 
       // Create user in Supabase Auth first
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -83,8 +100,7 @@ export default function CompleteProfile() {
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
-          id: authData.user.id, // This should match the user ID from auth
-          email: `${publicKey}@wallet.local`,
+          id: authData.user.id,
           display_name: formData.displayName,
           bio: formData.bio,
           auth_provider: 'wallet',
@@ -128,7 +144,6 @@ export default function CompleteProfile() {
       setUser({
         id: parseInt(authData.user.id),
         publicKey,
-        email: `${publicKey}@wallet.local`,
         name: formData.displayName,
         provider: 'wallet'
       });
@@ -171,6 +186,30 @@ export default function CompleteProfile() {
           <h1 className="text-3xl font-bold text-white mb-8 text-center">Complete Your Profile</h1>
           
           <form onSubmit={handleSubmit} className="space-y-8 max-w-md mx-auto">
+            {/* Wallet Address (Read-only) */}
+            <div className="space-y-3">
+              <label htmlFor="walletAddress" className="block text-sm font-medium text-white">
+                Wallet Address
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  id="walletAddress"
+                  value={walletAddress}
+                  readOnly
+                  className="w-full px-4 py-3 bg-dark-700/50 border border-dark-600 rounded-lg text-white/70 cursor-not-allowed"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="h-5 w-5 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-sm text-light-300">
+                This is your connected wallet address
+              </p>
+            </div>
+
             {/* Profile Picture Upload */}
             <div className="space-y-4">
               <label className="block text-sm font-medium text-white">
