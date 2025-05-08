@@ -125,9 +125,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         const { data: newProfile, error: profileError } = await supabase
           .from('profiles')
           .insert({
-            auth_provider: 'wallet',
-            auth_provider_id: publicKeyStr,
             public_key: publicKeyStr,
+            auth_provider_id: publicKeyStr,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
