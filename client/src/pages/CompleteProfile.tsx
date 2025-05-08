@@ -87,15 +87,21 @@ export default function CompleteProfile() {
     try {
       setIsLoading(true);
 
-      // Debug: Log session and user before profile operations
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log('[Debug] supabase.auth.getSession() result:', sessionData, sessionError);
-      const { data: userData, error: getUserError } = await supabase.auth.getUser();
-      console.log('[Debug] supabase.auth.getUser() result:', userData, getUserError);
-
       // Get the current user
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
-      if (userError || !currentUser) throw new Error("Failed to get current user");
+      let { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      if (userError || !currentUser) {
+        // If no auth session, try to sign in with the wallet
+        const { data: { user: authUser, session }, error: signInError } = await supabase.auth.signInWithPassword({
+          email: `${user.publicKey}@wallet.local`,
+          password: user.publicKey
+        });
+
+        if (signInError || !authUser) {
+          throw new Error("Failed to authenticate user");
+        }
+
+        currentUser = authUser;
+      }
 
       // Handle profile picture upload if selected
       let profilePictureUrl: string | undefined = undefined;
@@ -182,6 +188,9 @@ export default function CompleteProfile() {
         picture: profilePictureUrl,
         provider: 'wallet'
       });
+
+      // Clean up temporary data
+      localStorage.removeItem('tempWalletData');
 
       toast({
         title: "Success",

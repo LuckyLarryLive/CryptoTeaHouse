@@ -119,16 +119,39 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         });
         setLocation('/dashboard');
       } else {
-        console.log("[WalletContext] No existing user found, redirecting to profile completion");
+        console.log("[WalletContext] No existing user found, creating new user...");
+        
+        // Create a new Supabase auth user
+        const { data: { user: authUser, session }, error: signUpError } = await supabase.auth.signUp({
+          email: `${publicKeyStr}@wallet.local`,
+          password: publicKeyStr, // Using public key as password
+          options: {
+            data: {
+              public_key: publicKeyStr,
+              provider: 'wallet'
+            }
+          }
+        });
+
+        if (signUpError) {
+          console.error("Error creating auth user:", signUpError);
+          throw signUpError;
+        }
+
+        if (!authUser) {
+          throw new Error("Failed to create auth user");
+        }
+
         // Store temporary wallet data
         localStorage.setItem('tempWalletData', JSON.stringify({
           publicKey: publicKeyStr,
-          provider: 'wallet'
+          provider: 'wallet',
+          timestamp: Date.now()
         }));
         
         // Set temporary user state
         setUser({
-          id: 'temp', // Temporary ID until profile is created
+          id: authUser.id,
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
