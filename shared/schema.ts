@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -147,9 +147,34 @@ export const insertReferralSchema = createInsertSchema(referrals).pick({
 // User Stats Table
 export const userStats = pgTable("user_stats", {
   userId: integer("user_id").primaryKey().references(() => users.id),
-  totalTicketsBought: integer("total_tickets_bought").notNull().default(0),
-  totalTicketsWon: integer("total_tickets_won").notNull().default(0),
-  totalPrizesWon: text("total_prizes_won").notNull().default("0"), // Amount in SOL
+  
+  // Current ticket counts
+  currentDailyTickets: integer("current_daily_tickets").notNull().default(0),
+  currentWeeklyTickets: integer("current_weekly_tickets").notNull().default(0),
+  currentMonthlyTickets: integer("current_monthly_tickets").notNull().default(0),
+  currentYearlyTickets: integer("current_yearly_tickets").notNull().default(0),
+  
+  // Lifetime ticket counts
+  lifetimeDailyTickets: integer("lifetime_daily_tickets").notNull().default(0),
+  lifetimeWeeklyTickets: integer("lifetime_weekly_tickets").notNull().default(0),
+  lifetimeMonthlyTickets: integer("lifetime_monthly_tickets").notNull().default(0),
+  lifetimeYearlyTickets: integer("lifetime_yearly_tickets").notNull().default(0),
+  
+  // Daily pull counts
+  dailyPullCount: integer("daily_pull_count").notNull().default(0),
+  dailyRaffleWinCount: integer("daily_raffle_win_count").notNull().default(0),
+  dailyRewardWinCount: integer("daily_reward_win_count").notNull().default(0),
+  
+  // Lifetime pull counts
+  lifetimePullCount: integer("lifetime_pull_count").notNull().default(0),
+  lifetimeRaffleWinCount: integer("lifetime_raffle_win_count").notNull().default(0),
+  lifetimeRewardWinCount: integer("lifetime_reward_win_count").notNull().default(0),
+  
+  // Financial statistics
+  totalSolSpent: decimal("total_sol_spent", { precision: 20, scale: 9 }).notNull().default("0"), // Amount in SOL
+  totalRewardBuybacks: decimal("total_reward_buybacks", { precision: 20, scale: 9 }).notNull().default("0"), // Amount in SOL
+  
+  // Timestamps
   lastPullAt: timestamp("last_pull_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -157,9 +182,22 @@ export const userStats = pgTable("user_stats", {
 
 export const insertUserStatSchema = createInsertSchema(userStats).pick({
   userId: true,
-  totalTicketsBought: true,
-  totalTicketsWon: true,
-  totalPrizesWon: true,
+  currentDailyTickets: true,
+  currentWeeklyTickets: true,
+  currentMonthlyTickets: true,
+  currentYearlyTickets: true,
+  lifetimeDailyTickets: true,
+  lifetimeWeeklyTickets: true,
+  lifetimeMonthlyTickets: true,
+  lifetimeYearlyTickets: true,
+  dailyPullCount: true,
+  dailyRaffleWinCount: true,
+  dailyRewardWinCount: true,
+  lifetimePullCount: true,
+  lifetimeRaffleWinCount: true,
+  lifetimeRewardWinCount: true,
+  totalSolSpent: true,
+  totalRewardBuybacks: true,
   lastPullAt: true,
 });
 
