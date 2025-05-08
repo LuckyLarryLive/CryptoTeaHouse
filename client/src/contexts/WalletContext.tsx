@@ -144,12 +144,9 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     try {
       console.log("[WalletContext] Attempting server authentication...");
       
-      // Check if user exists with this wallet address
+      // Check if user exists with this wallet address using the function
       const { data: existingProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, display_name, email, profile_picture_url, auth_provider_id')
-        .eq('auth_provider_id', publicKeyStr)
-        .maybeSingle();
+        .rpc('get_profile_by_wallet', { wallet_address: publicKeyStr });
 
       if (profileError) {
         console.error("Error checking existing user:", profileError);
