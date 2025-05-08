@@ -32,10 +32,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user tickets
   app.get("/api/user/:userId/tickets", async (req: Request, res: Response) => {
     try {
-      const userId = Number(req.params.userId);
+      const userId = req.params.userId;
       
-      if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid user ID" });
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
       }
       
       // Return mock ticket counts
@@ -131,11 +131,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user activities
   app.get("/api/user/:userId/activities", async (req: Request, res: Response) => {
     try {
-      const userId = Number(req.params.userId);
+      const userId = req.params.userId;
       const limit = Number(req.query.limit) || 10;
       
-      if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid user ID" });
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
       }
       
       // Return mock activities

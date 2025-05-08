@@ -11,13 +11,13 @@ import { eq, and, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByPublicKey(publicKey: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUserLogin(id: number): Promise<User | undefined>;
+  updateUserLogin(id: string): Promise<User | undefined>;
 
   // Ticket methods
-  getTickets(userId: number): Promise<{ type: string, count: number }[]>;
+  getTickets(userId: string): Promise<{ type: string, count: number }[]>;
   createTicket(ticket: InsertTicket): Promise<Ticket>;
   
   // Draw methods
@@ -32,13 +32,13 @@ export interface IStorage {
   updateWinnerTransaction(id: number, signature: string): Promise<Winner | undefined>;
   
   // Activity methods
-  getUserActivities(userId: number, limit?: number): Promise<Activity[]>;
+  getUserActivities(userId: string, limit?: number): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
 }
 
 export class DatabaseStorage implements IStorage {
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -53,7 +53,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
-  async updateUserLogin(id: number): Promise<User | undefined> {
+  async updateUserLogin(id: string): Promise<User | undefined> {
     const [user] = await db
       .update(users)
       .set({ lastLoginAt: new Date() })
@@ -63,7 +63,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Ticket methods
-  async getTickets(userId: number): Promise<{ type: string, count: number }[]> {
+  async getTickets(userId: string): Promise<{ type: string, count: number }[]> {
     const ticketCounts = await db
       .select({
         type: tickets.type,
@@ -163,7 +163,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Activity methods
-  async getUserActivities(userId: number, limit: number = 10): Promise<Activity[]> {
+  async getUserActivities(userId: string, limit: number = 10): Promise<Activity[]> {
     const activities = await db
       .select()
       .from(activities)
