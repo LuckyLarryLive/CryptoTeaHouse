@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import { initGoogleAuth, handleGoogleSignIn, isGoogleInitialized } from "@/lib/googleAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { useLocation } from "wouter";
 
 interface WalletModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
   const { connect, isConnecting, setUser } = useWallet();
   const { toast } = useToast();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [, setLocation] = useLocation();
 
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
   const [username, setUsername] = useState("");
@@ -159,7 +161,7 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
         });
 
         onClose();
-        window.location.href = '/complete-profile';
+        setLocation('/complete-profile');
       } else {
         // Sign in with email/password
         const { data: { user, session }, error: signInError } = await supabase.auth.signInWithPassword({
@@ -184,7 +186,7 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
         });
 
         onClose();
-        window.location.href = '/dashboard';
+        setLocation('/dashboard');
       }
     } catch (error) {
       console.error(isSignUp ? "Sign up error:" : "Sign in error:", error);
@@ -230,10 +232,10 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
           // If no profile exists, redirect to profile completion
           if (!profile) {
             onClose();
-            window.location.href = '/complete-profile';
+            setLocation('/complete-profile');
           } else {
             onClose();
-            window.location.href = '/dashboard';
+            setLocation('/dashboard');
           }
 
           toast({
