@@ -46,14 +46,24 @@ export default function Dashboard() {
       if (!response.ok) {
         const error = await response.text();
         console.error('[Dashboard] Error fetching tickets:', error);
-        throw new Error('Failed to fetch tickets');
+        // Don't throw, return empty array instead
+        return [];
       }
       const data = await response.json();
       console.log('[Dashboard] Tickets fetched successfully:', data);
       return data;
     },
     enabled: !!user?.id,
-    retry: 1
+    retry: 1,
+    staleTime: 30000,
+    onError: (error) => {
+      console.error('[Dashboard] Query error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load tickets. Please try again.",
+        variant: "destructive"
+      });
+    }
   });
 
   // Fetch next draw times
@@ -69,14 +79,24 @@ export default function Dashboard() {
       if (!response.ok) {
         const error = await response.text();
         console.error('[Dashboard] Error fetching draws:', error);
-        throw new Error('Failed to fetch draws');
+        // Don't throw, return empty array instead
+        return [];
       }
       const data = await response.json();
       console.log('[Dashboard] Draws fetched successfully:', data);
       return data;
     },
     enabled: !!user?.id,
-    retry: 1
+    retry: 1,
+    staleTime: 30000,
+    onError: (error) => {
+      console.error('[Dashboard] Query error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load upcoming draws. Please try again.",
+        variant: "destructive"
+      });
+    }
   });
   
   // Fetch user activities
@@ -93,14 +113,24 @@ export default function Dashboard() {
       if (!response.ok) {
         const error = await response.text();
         console.error('[Dashboard] Error fetching activities:', error);
-        throw new Error('Failed to fetch activities');
+        // Don't throw, return empty array instead
+        return [];
       }
       const data = await response.json();
       console.log('[Dashboard] Activities fetched successfully:', data);
       return data;
     },
     enabled: !!user?.id,
-    retry: 1
+    retry: 1,
+    staleTime: 30000,
+    onError: (error) => {
+      console.error('[Dashboard] Query error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load activities. Please try again.",
+        variant: "destructive"
+      });
+    }
   });
 
   // Log user state changes
