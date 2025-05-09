@@ -27,10 +27,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get user tickets - Pure stub
-  app.get("/api/tickets/user/:userId", (req: Request, res: Response) => {
-    console.log('[API] Stub /api/tickets/user called');
-    return res.status(200).json([
+  // Get user tickets - Minimal stub
+  app.get("/api/tickets/user/:userId", (_req: Request, res: Response) => {
+    res.status(200).json([
       { type: "daily", count: 0 },
       { type: "weekly", count: 0 },
       { type: "monthly", count: 0 },
@@ -38,16 +37,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ]);
   });
   
-  // Get upcoming draws - Pure stub
-  app.get("/api/draws/upcoming", (req: Request, res: Response) => {
-    console.log('[API] Stub /api/draws/upcoming called');
-    return res.status(200).json([]);
+  // Get upcoming draws - Minimal stub
+  app.get("/api/draws/upcoming", (_req: Request, res: Response) => {
+    res.status(200).json([]);
   });
   
-  // Get user activities - Pure stub
-  app.get("/api/activities/user/:userId", (req: Request, res: Response) => {
-    console.log('[API] Stub /api/activities/user called');
-    return res.status(200).json([]);
+  // Get user activities - Minimal stub
+  app.get("/api/activities/user/:userId", (_req: Request, res: Response) => {
+    res.status(200).json([]);
   });
   
   // Pull lucky cat arm endpoint
@@ -108,10 +105,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get winners - Pure stub
-  app.get("/api/winners", (req: Request, res: Response) => {
-    console.log('[API] Stub /api/winners called');
-    return res.status(200).json([]);
+  // Get winners - Minimal stub
+  app.get("/api/winners", (_req: Request, res: Response) => {
+    res.status(200).json([]);
   });
 
   const httpServer = createServer(app);
