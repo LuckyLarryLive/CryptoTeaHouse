@@ -126,17 +126,40 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           throw new Error("Failed to create auth user - no user data returned");
         }
 
-        // Generate a UUID for the new user
-        const userId = signUpData.user.id;
-        
+        // Log the signup data to verify user ID
+        console.log("[WalletContext] Signup successful. Auth user data:", {
+          id: signUpData.user.id,
+          email: signUpData.user.email,
+          metadata: signUpData.user.user_metadata
+        });
+
+        // First create a user record in the users table
+        const { data: newUser, error: userError } = await supabase
+          .from('users')
+          .insert({
+            id: signUpData.user.id,
+            public_key: publicKeyStr,
+            email: signUpData.user.email,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (userError) {
+          console.error("Error creating user record:", JSON.stringify(userError, null, 2));
+          throw userError;
+        }
+
+        console.log("[WalletContext] Created user record:", newUser);
+
         // Create initial profile
         const { data: newProfile, error: profileError } = await supabase
           .from('profiles')
           .insert({
-            id: userId,
+            id: signUpData.user.id, // Using the same ID from auth user
             auth_provider_id: publicKeyStr,
             display_name: '', // Will be set during profile completion
-            handle: `user_${userId.slice(0, 8)}`, // Temporary handle
+            handle: `user_${signUpData.user.id.slice(0, 8)}`, // Using auth user ID for handle
             is_profile_complete: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -153,7 +176,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           throw new Error("Failed to create profile - no data returned");
         }
 
-        console.log("Successfully created new profile:", newProfile);
+        console.log("[WalletContext] Successfully created new profile:", newProfile);
 
         // Store temporary wallet data
         localStorage.setItem('tempWalletData', JSON.stringify({
@@ -164,7 +187,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         
         // Set temporary user state
         setUser({
-          id: userId,
+          id: signUpData.user.id,
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
