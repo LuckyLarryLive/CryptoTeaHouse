@@ -28,7 +28,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get user tickets
-  app.get("/api/user/:userId/tickets", async (req: Request, res: Response) => {
+  app.get("/api/tickets/user/:userId", async (req: Request, res: Response) => {
     try {
       const userId = req.params.userId;
       
@@ -36,8 +36,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user ID" });
       }
       
-      const tickets = await storage.getTickets(userId);
-      return res.status(200).json(tickets);
+      // Return empty array for now
+      return res.status(200).json([
+        { type: "daily", count: 0 },
+        { type: "weekly", count: 0 },
+        { type: "monthly", count: 0 },
+        { type: "yearly", count: 0 }
+      ]);
     } catch (error) {
       console.error("Get tickets error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -47,8 +52,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get upcoming draws
   app.get("/api/draws/upcoming", async (req: Request, res: Response) => {
     try {
-      const upcomingDraws = await storage.getNextDraws();
-      return res.status(200).json(upcomingDraws);
+      // Return empty array for now
+      return res.status(200).json([]);
     } catch (error) {
       console.error("Get upcoming draws error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -114,17 +119,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get user activities
-  app.get("/api/user/:userId/activities", async (req: Request, res: Response) => {
+  app.get("/api/activities/user/:userId", async (req: Request, res: Response) => {
     try {
       const userId = req.params.userId;
-      const limit = Number(req.query.limit) || 10;
       
       if (!userId) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
       
-      const activities = await storage.getUserActivities(userId, limit);
-      return res.status(200).json(activities);
+      // Return empty array for now
+      return res.status(200).json([]);
     } catch (error) {
       console.error("Get activities error:", error);
       return res.status(500).json({ message: "Internal server error" });
