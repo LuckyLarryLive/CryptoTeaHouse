@@ -83,12 +83,38 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
   // Wrap setUser to ensure state updates are tracked
   const updateUser = (newUser: WalletUser | null) => {
-    console.log('[WalletContext] Updating user state:', {
-      before: user,
-      after: newUser,
+    console.log('[WalletContext] updateUser called with:', {
+      newUser,
+      currentUser: user,
       isProfileComplete: newUser?.is_profile_complete
     });
-    setUser(newUser);
+
+    setUser((prevUser) => {
+      console.log('[WalletContext] setUser callback - previous state:', {
+        prevUser,
+        prevIsProfileComplete: prevUser?.is_profile_complete
+      });
+
+      // If newUser is null, return null
+      if (newUser === null) {
+        console.log('[WalletContext] Setting user to null');
+        return null;
+      }
+
+      // Create new user object with spread operator
+      const updatedUser = {
+        ...prevUser,
+        ...newUser,
+        is_profile_complete: newUser.is_profile_complete // Explicitly set this field
+      };
+
+      console.log('[WalletContext] setUser callback - new state:', {
+        updatedUser,
+        isProfileComplete: updatedUser.is_profile_complete
+      });
+
+      return updatedUser;
+    });
   };
 
   const connect = async (walletType: WalletProviderType) => {
