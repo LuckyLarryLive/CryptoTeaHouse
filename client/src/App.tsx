@@ -1,7 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { WalletProvider } from "@/contexts/WalletContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { useWallet } from "@/contexts/WalletContext";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -12,7 +16,6 @@ import Roadmap from "@/pages/Roadmap";
 import Legal from "@/pages/Legal";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { WalletProvider, useWallet } from "@/contexts/WalletContext";
 import AgeVerification from "@/components/AgeVerification";
 import CompleteProfile from '@/pages/CompleteProfile';
 import Preferences from '@/pages/Preferences';
@@ -85,6 +88,57 @@ function AppRoutes() {
     </Switch>
   );
 }
+
+const RouteGuard = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useWallet();
+  const [location, setLocation] = useLocation();
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    console.log('[RouteGuard] Checking route access:', {
+      currentLocation: location,
+      hasUser: !!user,
+      userId: user?.id,
+      isProfileComplete: user?.is_profile_complete,
+      userData: user,
+      userStateString: JSON.stringify(user, null, 2),
+      timestamp: new Date().toISOString()
+    });
+
+    // Add a small delay to allow context updates to propagate
+    const timer = setTimeout(() => {
+      if (!user) {
+        console.log('[RouteGuard] No user, redirecting to login');
+        setLocation('/login');
+      } else if (!user.is_profile_complete && location !== '/complete-profile') {
+        console.log('[RouteGuard] Profile incomplete, redirecting to complete-profile:', {
+          currentLocation: location,
+          isProfileComplete: user.is_profile_complete,
+          userData: user,
+          userStateString: JSON.stringify(user, null, 2),
+          timestamp: new Date().toISOString()
+        });
+        setLocation('/complete-profile');
+      } else if (user.is_profile_complete && location === '/complete-profile') {
+        console.log('[RouteGuard] Profile complete, redirecting to dashboard');
+        setLocation('/dashboard');
+      }
+      setIsChecking(false);
+    }, 50); // Small delay to allow context updates
+
+    return () => clearTimeout(timer);
+  }, [user, location, setLocation]);
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
 
 function App() {
   return (
