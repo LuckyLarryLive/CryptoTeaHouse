@@ -96,27 +96,94 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     try {
       console.log("[WalletContext] Attempting server authentication...");
       
-      // Check if user exists with this wallet address using the function
-      const { data: existingProfile, error: profileError } = await supabase
-        .rpc('get_profile_by_wallet', { wallet_address: publicKeyStr });
+      // First try to sign in with the wallet auth email
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: `${publicKeyStr.toLowerCase()}@wallet.local`,
+        password: publicKeyStr
+      });
 
-      if (profileError) {
-        console.error("Error checking existing user:", profileError);
-        throw profileError;
-      }
-
-      if (existingProfile) {
-        console.log("[WalletContext] Existing user found:", existingProfile);
+      if (authError) {
+        console.log("[WalletContext] Sign in failed, attempting sign up...");
         
-        // Try to sign in with the wallet auth email
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: `wallet_${publicKeyStr.toLowerCase()}@auth.local`,
-          password: publicKeyStr
+        // If sign in fails, try to sign up
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: `${publicKeyStr.toLowerCase()}@wallet.local`,
+          password: publicKeyStr,
+          options: {
+            data: {
+              public_key: publicKeyStr,
+              wallet_type: 'phantom'
+            }
+          }
         });
 
-        if (authError) {
-          console.error("Error signing in existing user:", authError);
-          throw authError;
+        if (signUpError) {
+          console.error("Error creating auth user:", JSON.stringify(signUpError, null, 2));
+          throw signUpError;
+        }
+
+        if (!signUpData.user) {
+          throw new Error("Failed to create auth user - no user data returned");
+        }
+
+        // Generate a UUID for the new user
+        const userId = signUpData.user.id;
+        
+        // Create initial profile
+        const { data: newProfile, error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            auth_provider_id: publicKeyStr,
+            display_name: '', // Will be set during profile completion
+            handle: `user_${userId.slice(0, 8)}`, // Temporary handle
+            is_profile_complete: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (profileError) {
+          console.error("Error creating profile:", JSON.stringify(profileError, null, 2));
+          throw profileError;
+        }
+
+        if (!newProfile) {
+          throw new Error("Failed to create profile - no data returned");
+        }
+
+        console.log("Successfully created new profile:", newProfile);
+
+        // Store temporary wallet data
+        localStorage.setItem('tempWalletData', JSON.stringify({
+          publicKey: publicKeyStr,
+          provider: 'wallet',
+          timestamp: Date.now()
+        }));
+        
+        // Set temporary user state
+        setUser({
+          id: userId,
+          publicKey: publicKeyStr,
+          provider: 'wallet'
+        });
+        
+        // Redirect to complete profile
+        console.log("Redirecting to complete profile page...");
+        setLocation('/complete-profile');
+      } else {
+        // Sign in successful, get the user's profile
+        const { data: existingProfile, error: profileError } = await supabase
+          .rpc('get_profile_by_wallet', { wallet_address: publicKeyStr });
+
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          throw profileError;
+        }
+
+        if (!existingProfile) {
+          throw new Error("Profile not found for authenticated user");
         }
 
         // User exists, set the user data
@@ -141,97 +208,6 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         } else {
           setLocation('/dashboard');
         }
-      } else {
-        console.log("[WalletContext] No existing user found, creating new user...");
-        
-        // Generate a UUID for the new user
-        const userId = crypto.randomUUID();
-        
-        // First create a user record
-        const { data: newUser, error: userError } = await supabase
-          .from('users')
-          .insert({
-            id: userId,
-            public_key: publicKeyStr,
-            email: '', // Empty email for now, will be set during profile completion
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
-
-        if (userError) {
-          console.error("Error creating user:", JSON.stringify(userError, null, 2));
-          throw userError;
-        }
-
-        if (!newUser) {
-          console.error("No user data returned after creation");
-          throw new Error("Failed to create user - no data returned");
-        }
-
-        console.log("Successfully created new user:", newUser);
-
-        // Create auth user with public key as password
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: `wallet_${publicKeyStr.toLowerCase()}@auth.local`,
-          password: publicKeyStr,
-          options: {
-            data: {
-              public_key: publicKeyStr,
-              wallet_type: 'phantom'
-            }
-          }
-        });
-
-        if (authError) {
-          console.error("Error creating auth user:", JSON.stringify(authError, null, 2));
-          throw authError;
-        }
-
-        // Then create the profile
-        const { data: newProfile, error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            auth_provider_id: publicKeyStr,
-            display_name: '', // Will be set during profile completion
-            handle: `user_${userId.slice(0, 8)}`, // Temporary handle
-            is_profile_complete: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .select()
-          .single();
-
-        if (profileError) {
-          console.error("Error creating profile:", JSON.stringify(profileError, null, 2));
-          throw profileError;
-        }
-
-        if (!newProfile) {
-          console.error("No profile data returned after creation");
-          throw new Error("Failed to create profile - no data returned");
-        }
-
-        console.log("Successfully created new profile:", newProfile);
-
-        // Store temporary wallet data
-        localStorage.setItem('tempWalletData', JSON.stringify({
-          publicKey: publicKeyStr,
-          provider: 'wallet',
-          timestamp: Date.now()
-        }));
-        
-        // Set temporary user state
-        setUser({
-          id: userId,
-          publicKey: publicKeyStr,
-          provider: 'wallet'
-        });
-        
-        // Redirect to complete profile
-        console.log("Redirecting to complete profile page...");
-        setLocation('/complete-profile');
       }
     } catch (error) {
       console.error("[WalletContext] Authentication error:", error);
