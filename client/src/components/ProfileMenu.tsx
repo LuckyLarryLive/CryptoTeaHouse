@@ -23,9 +23,17 @@ export default function ProfileMenu() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          className="bg-dark-700 border border-primary/30 text-light-100"
+          className="bg-dark-700 border border-primary/30 text-light-100 flex items-center gap-2"
         >
-          {user?.username || formatPublicKey(publicKey)} <span className="w-2 h-2 bg-primary rounded-full inline-block ml-2"></span>
+          <img
+            src={user?.picture || '/images/default-avatar.png'}
+            alt="Profile"
+            className="w-6 h-6 rounded-full object-cover"
+          />
+          <span className="hidden md:inline">
+            {user?.username || formatPublicKey(publicKey)}
+          </span>
+          <span className="w-2 h-2 bg-primary rounded-full"></span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-dark-800 border border-dark-700">

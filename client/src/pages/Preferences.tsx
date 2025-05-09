@@ -232,7 +232,7 @@ export default function Preferences() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-dark-900 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-light-300">Profile Preferences</h2>

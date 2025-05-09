@@ -45,12 +45,29 @@ export default function Header() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
+            <nav className="hidden lg:flex items-center space-x-8">
               {navItems.map((item) => (
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`text-sm font-medium transition-colors ${
+                  className={`text-sm font-medium transition-colors whitespace-nowrap ${
+                    isActive(item.path)
+                      ? "text-primary"
+                      : "text-light-300 hover:text-light-100"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Tablet Navigation */}
+            <nav className="hidden md:flex lg:hidden items-center space-x-4">
+              {navItems.slice(0, 3).map((item) => (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`text-xs font-medium transition-colors whitespace-nowrap ${
                     isActive(item.path)
                       ? "text-primary"
                       : "text-light-300 hover:text-light-100"
