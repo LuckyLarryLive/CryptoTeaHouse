@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { useEffect } from "react";
+import { Route, Switch, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -16,30 +17,30 @@ import AgeVerification from "@/components/AgeVerification";
 import CompleteProfile from '@/pages/CompleteProfile';
 import Preferences from '@/pages/Preferences';
 
-function Router() {
-  const { connected } = useWallet();
+function AppRoutes() {
+  const [location, setLocation] = useLocation();
+  const { user, walletProvider } = useWallet();
+
+  const isConnected = !!user && !!walletProvider;
+
+  useEffect(() => {
+    if (isConnected && !user?.username && location !== "/complete-profile") {
+      setLocation("/complete-profile");
+    }
+  }, [isConnected, user, location, setLocation]);
 
   return (
-    <>
-      <Header />
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/dashboard">
-          {connected ? <Dashboard /> : <Home />}
-        </Route>
-        <Route path="/winners" component={Winners} />
-        <Route path="/how-it-works" component={HowItWorks} />
-        <Route path="/tokenomics" component={Tokenomics} />
-        <Route path="/roadmap" component={Roadmap} />
-        <Route path="/legal" component={Legal} />
-        <Route path="/complete-profile" component={CompleteProfile} />
-        <Route path="/preferences">
-          {connected ? <Preferences /> : <Home />}
-        </Route>
-        <Route component={NotFound} />
-      </Switch>
-      <Footer />
-    </>
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/complete-profile" component={CompleteProfile} />
+      <Route path="/preferences" component={Preferences} />
+      <Route path="/winners" component={Winners} />
+      <Route path="/how-it-works" component={HowItWorks} />
+      <Route path="/tokenomics" component={Tokenomics} />
+      <Route path="/roadmap" component={Roadmap} />
+      <Route path="/legal" component={Legal} />
+    </Switch>
   );
 }
 
@@ -49,7 +50,13 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <AgeVerification />
-        <Router />
+        <div className="min-h-screen bg-dark-900 text-light-100">
+          <Header />
+          <main className="pt-16">
+            <AppRoutes />
+          </main>
+          <Footer />
+        </div>
       </TooltipProvider>
     </WalletProvider>
   );

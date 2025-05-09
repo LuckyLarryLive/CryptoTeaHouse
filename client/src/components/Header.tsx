@@ -8,7 +8,7 @@ import ProfileMenu from "./ProfileMenu";
 
 export default function Header() {
   const [location] = useLocation();
-  const { connected, user } = useWallet();
+  const { user, walletProvider } = useWallet();
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   
@@ -31,6 +31,8 @@ export default function Header() {
     setIsSignUp(isSignUpFlow);
     setWalletModalOpen(true);
   };
+
+  const isConnected = !!user && !!walletProvider;
 
   return (
     <>
@@ -114,7 +116,7 @@ export default function Header() {
                         {item.name}
                       </Link>
                     ))}
-                    {!connected && (
+                    {!isConnected && (
                       <div className="flex flex-col gap-2">
                         <Button 
                           className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold"
@@ -131,7 +133,7 @@ export default function Header() {
             
             {/* Connect Wallet Button (Desktop) */}
             <div className="hidden md:flex items-center space-x-4">
-              {connected ? (
+              {isConnected ? (
                 <>
                   <Link 
                     href="/dashboard"

@@ -16,12 +16,12 @@ export default function WalletModal({ isOpen, onClose, isSignUp = false }: Walle
   const { toast } = useToast();
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
 
-  const handleConnect = async (walletName: string) => {
+  const handleConnect = async (walletName: 'phantom' | 'solflare') => {
     console.log(`[WalletModal] handleConnect called with: ${walletName}`);
     setSelectedWallet(walletName);
     try {
       console.log(`[WalletModal] Attempting to call context.connect for ${walletName}...`);
-      await connect(walletName);
+      await connect(walletName === 'solflare' ? 'phantom' : walletName);
       console.log(`[WalletModal] context.connect for ${walletName} completed.`);
       onClose();
     } catch (error) {

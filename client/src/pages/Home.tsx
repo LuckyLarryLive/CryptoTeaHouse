@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/contexts/WalletContext";
@@ -6,13 +6,21 @@ import WalletModal from "@/components/WalletModal";
 import LuckyCatVideo from "@/components/LuckyCatVideo";
 
 export default function Home() {
-  const [, navigate] = useLocation();
-  const { connected } = useWallet();
+  const [, setLocation] = useLocation();
+  const { user, walletProvider } = useWallet();
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   
+  const isConnected = !!user && !!walletProvider;
+
+  useEffect(() => {
+    if (isConnected) {
+      setLocation("/dashboard");
+    }
+  }, [isConnected, setLocation]);
+
   const handleConnectWallet = () => {
-    if (connected) {
-      navigate("/dashboard");
+    if (isConnected) {
+      setLocation("/dashboard");
     } else {
       setWalletModalOpen(true);
     }
@@ -44,7 +52,7 @@ export default function Home() {
                   className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold px-8 py-4 rounded-xl shadow-lg text-lg wallet-button"
                   onClick={handleConnectWallet}
                 >
-                  {connected ? "Enter Tea House" : "Connect Wallet"}
+                  {isConnected ? "Enter Tea House" : "Connect Wallet"}
                 </Button>
                 <p className="text-sm text-light-300 mt-2">
                   No purchase necessary. See{" "}

@@ -27,6 +27,7 @@ export const profiles = pgTable("profiles", {
   created_at: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
   handle: text("handle").notNull().unique(),
+  newsletter_opt_in: boolean("newsletter_opt_in").notNull().default(false),
 });
 
 export const insertProfileSchema = createInsertSchema(profiles).pick({

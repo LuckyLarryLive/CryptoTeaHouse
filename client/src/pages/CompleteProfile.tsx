@@ -10,6 +10,7 @@ interface ProfileFormData {
   email: string;
   bio: string;
   profilePicture: File | null;
+  newsletterOptIn: boolean;
 }
 
 export default function CompleteProfile() {
@@ -24,7 +25,8 @@ export default function CompleteProfile() {
     handle: '',
     email: '',
     bio: '',
-    profilePicture: null
+    profilePicture: null,
+    newsletterOptIn: false
   });
 
   // Handle handle validation
@@ -241,6 +243,7 @@ export default function CompleteProfile() {
             profile_picture_url: profilePictureUrl || null,
             is_profile_complete: true,
             auth_provider_id: user.publicKey,
+            newsletter_opt_in: formData.newsletterOptIn,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
@@ -520,6 +523,21 @@ export default function CompleteProfile() {
                 className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 placeholder="Tell us about yourself"
               />
+            </div>
+
+            {/* Newsletter Opt-in */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="newsletterOptIn"
+                name="newsletterOptIn"
+                checked={formData.newsletterOptIn}
+                onChange={(e) => setFormData(prev => ({ ...prev, newsletterOptIn: e.target.checked }))}
+                className="h-4 w-4 rounded border-gray-700 bg-dark-800 text-primary focus:ring-primary"
+              />
+              <label htmlFor="newsletterOptIn" className="ml-2 block text-sm text-light-300">
+                Subscribe to our newsletter
+              </label>
             </div>
 
             {error && (
