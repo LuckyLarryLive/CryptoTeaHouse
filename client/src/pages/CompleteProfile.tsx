@@ -42,19 +42,13 @@ export default function CompleteProfile() {
         .from('profiles')
         .select('id')
         .eq('handle', handle)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // Handle is available
-          setHandleError(null);
-          return true;
-        } else {
-          // Other error occurred
-          console.error('Error checking handle:', error);
-          setHandleError('Error checking handle availability. Please try again.');
-          return false;
-        }
+        // This will only trigger for actual errors, not "not found" cases
+        console.error('Error checking handle:', error);
+        setHandleError('Error checking handle availability. Please try again.');
+        return false;
       }
 
       if (existing) {
@@ -128,33 +122,44 @@ export default function CompleteProfile() {
       // Handle profile picture upload if selected
       let profilePictureUrl: string | undefined = undefined;
       if (formData.profilePicture) {
-        const fileExt = formData.profilePicture.name.split('.').pop()?.toLowerCase() || 'png';
-        const fileName = `${currentUser.id}/profile.${fileExt}`;
+        const file = formData.profilePicture;
         
+        // Log file details before upload
+        console.log('File details before upload:', {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          lastModified: file.lastModified,
+          isFile: file instanceof File
+        });
+
         try {
           // Validate file type
           const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-          if (!allowedTypes.includes(formData.profilePicture.type)) {
+          if (!allowedTypes.includes(file.type)) {
             throw new Error('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
           }
 
           // Validate file size (max 5MB)
           const maxSize = 5 * 1024 * 1024; // 5MB
-          if (formData.profilePicture.size > maxSize) {
+          if (file.size > maxSize) {
             throw new Error('File size too large. Maximum size is 5MB.');
           }
 
-          // Upload the file
+          const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
+          const fileName = `${currentUser.id}/profile.${fileExt}`;
+
+          // Upload the file with explicit content type
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('profile-pictures')
-            .upload(fileName, formData.profilePicture, {
+            .upload(fileName, file, {
               cacheControl: '3600',
               upsert: true,
-              contentType: formData.profilePicture.type
+              contentType: file.type // Ensure we use the file's actual MIME type
             });
 
           if (uploadError) {
-            console.error('Profile picture upload error:', uploadError);
+            console.error('Upload error details:', uploadError);
             throw uploadError;
           }
 
@@ -164,7 +169,11 @@ export default function CompleteProfile() {
             .getPublicUrl(fileName);
             
           profilePictureUrl = publicUrl;
-          console.log('Profile picture uploaded successfully:', publicUrl);
+          console.log('Profile picture uploaded successfully:', {
+            publicUrl,
+            fileName,
+            contentType: file.type
+          });
         } catch (error) {
           console.error('Error uploading profile picture:', error);
           toast({
@@ -251,19 +260,30 @@ export default function CompleteProfile() {
         throw new Error('No user ID available');
       }
 
-      const fileExt = file.name.split('.').pop();
+      // Log file details before upload
+      console.log('File details before upload:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        lastModified: file.lastModified,
+        isFile: file instanceof File
+      });
+
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
       const fileName = `profile.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      // Upload file to storage
+      // Upload file to storage with explicit content type
       const { error: uploadError } = await supabase.storage
         .from('profile-pictures')
         .upload(filePath, file, {
           upsert: true,
-          cacheControl: '3600'
+          cacheControl: '3600',
+          contentType: file.type // Ensure we use the file's actual MIME type
         });
 
       if (uploadError) {
+        console.error('Upload error details:', uploadError);
         throw uploadError;
       }
 
@@ -272,7 +292,11 @@ export default function CompleteProfile() {
         .from('profile-pictures')
         .getPublicUrl(filePath);
 
-      console.log('Profile picture uploaded successfully:', publicUrl);
+      console.log('Profile picture uploaded successfully:', {
+        publicUrl,
+        filePath,
+        contentType: file.type
+      });
 
       // Update profile with the new picture URL
       const { error: updateError } = await supabase

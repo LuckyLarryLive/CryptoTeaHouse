@@ -145,22 +145,17 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         .from('users')
         .select('*')
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle();
 
       if (userError) {
-        if (userError.code === 'PGRST116') {
-          // Record not found, proceed with creation
-          console.log("[WalletContext] No existing user record found, creating new one...");
-        } else {
-          // Other error occurred
-          console.error("Error checking user record:", JSON.stringify(userError, null, 2));
-          throw userError;
-        }
+        // This will only trigger for actual errors, not "not found" cases
+        console.error("Error checking user record:", JSON.stringify(userError, null, 2));
+        throw userError;
       }
 
       // Create user record if it doesn't exist
       if (!existingUser) {
-        console.log("[WalletContext] Creating new user record...");
+        console.log("[WalletContext] No existing user record found, creating new one...");
         const { data: newUser, error: createUserError } = await supabase
           .from('users')
           .insert({
@@ -185,22 +180,17 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
-        if (profileError.code === 'PGRST116') {
-          // Record not found, proceed with creation
-          console.log("[WalletContext] No existing profile found, creating new one...");
-        } else {
-          // Other error occurred
-          console.error("Error checking profile:", JSON.stringify(profileError, null, 2));
-          throw profileError;
-        }
+        // This will only trigger for actual errors, not "not found" cases
+        console.error("Error checking profile:", JSON.stringify(profileError, null, 2));
+        throw profileError;
       }
 
       // Create profile if it doesn't exist
       if (!existingProfile) {
-        console.log("[WalletContext] Creating new profile...");
+        console.log("[WalletContext] No existing profile found, creating new one...");
         const { data: newProfile, error: createProfileError } = await supabase
           .from('profiles')
           .insert({
