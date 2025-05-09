@@ -24,7 +24,7 @@ function AppRoutes() {
   const isConnected = !!user && !!walletProvider;
 
   useEffect(() => {
-    if (isConnected && !user?.username && location !== "/complete-profile") {
+    if (isConnected && !user?.is_profile_complete && location !== "/complete-profile") {
       setLocation("/complete-profile");
     }
   }, [isConnected, user, location, setLocation]);

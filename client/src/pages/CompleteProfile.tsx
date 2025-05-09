@@ -266,7 +266,8 @@ export default function CompleteProfile() {
         username: formData.displayName,
         name: formData.displayName,
         picture: profilePictureUrl,
-        provider: 'wallet'
+        provider: 'wallet',
+        is_profile_complete: true
       });
 
       // Clean up temporary data
@@ -366,7 +367,8 @@ export default function CompleteProfile() {
       setProfilePicture(publicUrl);
       setUser({
         ...user,
-        picture: publicUrl
+        picture: publicUrl,
+        is_profile_complete: user.is_profile_complete
       });
 
       toast({

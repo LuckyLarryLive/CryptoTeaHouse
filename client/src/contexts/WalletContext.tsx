@@ -14,6 +14,7 @@ interface WalletUser {
   name?: string;
   picture?: string;
   provider: 'wallet';
+  is_profile_complete?: boolean;
 }
 
 interface PhantomWallet {
@@ -229,7 +230,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         setUser({
           id: authUser.id,
           publicKey: publicKey,
-          provider: 'wallet'
+          provider: 'wallet',
+          is_profile_complete: false
         });
         
         setLocation('/complete-profile');
@@ -243,7 +245,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           username: existingProfile.display_name,
           name: existingProfile.display_name,
           picture: existingProfile.profile_picture_url,
-          provider: 'wallet'
+          provider: 'wallet',
+          is_profile_complete: existingProfile.is_profile_complete
         });
 
         if (!existingProfile.is_profile_complete) {
