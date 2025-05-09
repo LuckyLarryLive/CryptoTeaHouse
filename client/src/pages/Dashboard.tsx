@@ -8,7 +8,7 @@ import LuckyCat from "@/components/LuckyCat";
 import { Activity, Ticket } from "@/types";
 
 // Use relative paths for API calls
-const API_BASE = '/api';
+const API_BASE = '/functions/v1';
 
 interface NextDraw {
   type: string;
@@ -39,10 +39,10 @@ export default function Dashboard() {
     error: ticketsError,
     refetch: refetchTickets
   } = useQuery({
-    queryKey: [`/api/user/${user?.id}/tickets`],
+    queryKey: [`/functions/v1/tickets/${user?.id}`],
     queryFn: async () => {
       console.log('[Dashboard] Fetching tickets for user:', user?.id);
-      const response = await fetch(`${API_BASE}/tickets/user/${user?.id}`);
+      const response = await fetch(`${API_BASE}/tickets/${user?.id}`);
       if (!response.ok) {
         const error = await response.text();
         console.error('[Dashboard] Error fetching tickets:', error);
@@ -72,10 +72,10 @@ export default function Dashboard() {
     error: drawsError,
     isLoading: drawsLoading
   } = useQuery({
-    queryKey: ['/api/draws/upcoming'],
+    queryKey: ['/functions/v1/draws'],
     queryFn: async () => {
       console.log('[Dashboard] Fetching upcoming draws');
-      const response = await fetch(`${API_BASE}/draws/upcoming`);
+      const response = await fetch(`${API_BASE}/draws`);
       if (!response.ok) {
         const error = await response.text();
         console.error('[Dashboard] Error fetching draws:', error);
@@ -106,10 +106,10 @@ export default function Dashboard() {
     error: activitiesError,
     refetch: refetchActivities
   } = useQuery({
-    queryKey: [`/api/user/${user?.id}/activities`],
+    queryKey: [`/functions/v1/activities/${user?.id}`],
     queryFn: async () => {
       console.log('[Dashboard] Fetching activities for user:', user?.id);
-      const response = await fetch(`${API_BASE}/activities/user/${user?.id}`);
+      const response = await fetch(`${API_BASE}/activities/${user?.id}`);
       if (!response.ok) {
         const error = await response.text();
         console.error('[Dashboard] Error fetching activities:', error);
