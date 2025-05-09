@@ -4,6 +4,14 @@ import { storage } from "./storage";
 import { insertUserSchema, insertTicketSchema, insertActivitySchema } from "@shared/schema";
 import { z } from "zod";
 
+// CORS headers for Supabase Edge Functions
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
   app.post("/api/auth", async (req: Request, res: Response) => {
@@ -27,8 +35,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get user tickets - Minimal stub
+  // Get user tickets - Minimal stub with CORS
   app.get("/api/tickets/user/:userId", (_req: Request, res: Response) => {
+    res.set(corsHeaders);
     res.status(200).json([
       { type: "daily", count: 0 },
       { type: "weekly", count: 0 },
@@ -37,13 +46,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ]);
   });
   
-  // Get upcoming draws - Minimal stub
+  // Get upcoming draws - Minimal stub with CORS
   app.get("/api/draws/upcoming", (_req: Request, res: Response) => {
+    res.set(corsHeaders);
     res.status(200).json([]);
   });
   
-  // Get user activities - Minimal stub
+  // Get user activities - Minimal stub with CORS
   app.get("/api/activities/user/:userId", (_req: Request, res: Response) => {
+    res.set(corsHeaders);
     res.status(200).json([]);
   });
   
@@ -98,6 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
       
+      res.set(corsHeaders);
       return res.status(200).json(result);
     } catch (error) {
       console.error("Pull error:", error);
@@ -105,8 +117,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get winners - Minimal stub
+  // Get winners - Minimal stub with CORS
   app.get("/api/winners", (_req: Request, res: Response) => {
+    res.set(corsHeaders);
     res.status(200).json([]);
   });
 
