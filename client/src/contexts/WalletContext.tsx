@@ -89,13 +89,34 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       const response = await walletToConnect.connect();
       const publicKey = response.publicKey.toString();
 
-      // Authenticate with the server
-      const { data: { user: authUser, session }, error: authError } = await supabase.auth.signInWithPassword({
+      // Try to sign in first
+      let { data: { user: authUser, session }, error: authError } = await supabase.auth.signInWithPassword({
         email: `${publicKey.toLowerCase()}@wallet.local`,
         password: publicKey
       });
 
-      if (authError) throw authError;
+      // If sign in fails with invalid credentials, try to sign up
+      if (authError?.message?.includes('Invalid login credentials')) {
+        const { data: { user: newUser, session: newSession }, error: signUpError } = await supabase.auth.signUp({
+          email: `${publicKey.toLowerCase()}@wallet.local`,
+          password: publicKey,
+          options: {
+            data: {
+              public_key: publicKey,
+              provider: 'wallet'
+            }
+          }
+        });
+
+        if (signUpError) throw signUpError;
+        if (!newUser) throw new Error('No user data received after sign up');
+        
+        authUser = newUser;
+        session = newSession;
+      } else if (authError) {
+        throw authError;
+      }
+
       if (!authUser) throw new Error('No user data received after authentication');
 
       // Check if user record exists
