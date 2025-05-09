@@ -276,8 +276,8 @@ export default function CompleteProfile() {
             lifetime_pull_count: 0,
             lifetime_raffle_win_count: 0,
             lifetime_reward_win_count: 0,
-            total_sol_spent: 0,
-            total_reward_buybacks: 0,
+            total_sol_spent: "0",
+            total_reward_buybacks: "0",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
@@ -285,7 +285,7 @@ export default function CompleteProfile() {
 
       if (statsError) {
         console.error('Stats initialization error:', statsError);
-        throw statsError;
+        throw new Error('Failed to initialize user stats');
       }
 
       // Create initial activity
@@ -304,7 +304,7 @@ export default function CompleteProfile() {
 
       if (activityError) {
         console.error('Activity creation error:', activityError);
-        // Don't throw here, as this is not critical
+        throw new Error('Failed to create initial activity');
       }
 
       // Update wallet context with new user data

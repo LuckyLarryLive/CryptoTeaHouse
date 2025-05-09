@@ -40,37 +40,61 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      throw error;
+    }
   }
   
   async getUserByPublicKey(publicKey: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.publicKey, publicKey));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.publicKey, publicKey));
+      return user;
+    } catch (error) {
+      console.error('Error getting user by public key:', error);
+      throw error;
+    }
   }
   
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+    try {
+      const [user] = await db.insert(users).values({
+        ...insertUser,
+        id: crypto.randomUUID(),
+        lastLoginAt: new Date(),
+        createdAt: new Date()
+      }).returning();
+      return user;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   }
   
   async updateUserLogin(id: string): Promise<User | undefined> {
-    const [user] = await db
-      .update(users)
-      .set({ lastLoginAt: new Date() })
-      .where(eq(users.id, id))
-      .returning();
-    return user;
+    try {
+      const [user] = await db
+        .update(users)
+        .set({ lastLoginAt: new Date() })
+        .where(eq(users.id, id))
+        .returning();
+      return user;
+    } catch (error) {
+      console.error('Error updating user login:', error);
+      throw error;
+    }
   }
   
   // Ticket methods
   async getTickets(userId: string): Promise<{ type: string, count: number }[]> {
     try {
-      const stats = await db
+      const [stats] = await db
         .select()
         .from(userStats)
-        .where(eq(userStats.userId, userId))
-        .single();
+        .where(eq(userStats.userId, userId));
 
       if (!stats) {
         return [
@@ -93,95 +117,123 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async createTicket(insertTicket: InsertTicket): Promise<Ticket> {
-    const [ticket] = await db.insert(tickets).values(insertTicket).returning();
-    return ticket;
+  async createTicket(ticket: InsertTicket): Promise<Ticket> {
+    try {
+      const [newTicket] = await db.insert(tickets).values(ticket).returning();
+      return newTicket;
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      throw error;
+    }
   }
   
   // Draw methods
   async getDraws(type?: string): Promise<Draw[]> {
-    let query = db.select().from(draws).orderBy(desc(draws.drawTime));
-    
-    if (type) {
-      query = query.where(eq(draws.type, type));
+    try {
+      const query = db.select().from(draws);
+      if (type) {
+        query.where(eq(draws.type, type));
+      }
+      return await query;
+    } catch (error) {
+      console.error('Error getting draws:', error);
+      throw error;
     }
-    
-    return await query.limit(20);
   }
   
   async getNextDraws(): Promise<{type: string, drawTime: Date}[]> {
     try {
-      const currentTime = new Date();
-      
+      const now = new Date();
       const upcomingDraws = await db
-        .select({
-          type: draws.type,
-          drawTime: draws.drawTime
-        })
+        .select()
         .from(draws)
-        .where(and(
-          eq(draws.status, "pending"),
-          sql`${draws.drawTime} > ${currentTime}`
-        ))
-        .orderBy(draws.drawTime)
-        .groupBy(draws.type, draws.drawTime)
-        .limit(4);
+        .where(sql`draw_time > ${now}`)
+        .orderBy(draws.drawTime);
       
-      return upcomingDraws;
+      return upcomingDraws.map((draw: Draw) => ({
+        type: draw.type,
+        drawTime: draw.drawTime
+      }));
     } catch (error) {
       console.error('Error getting next draws:', error);
       throw error;
     }
   }
   
-  async createDraw(insertDraw: InsertDraw): Promise<Draw> {
-    const [draw] = await db.insert(draws).values(insertDraw).returning();
-    return draw;
+  async createDraw(draw: InsertDraw): Promise<Draw> {
+    try {
+      const [newDraw] = await db.insert(draws).values(draw).returning();
+      return newDraw;
+    } catch (error) {
+      console.error('Error creating draw:', error);
+      throw error;
+    }
   }
   
   async updateDrawStatus(id: number, status: string): Promise<Draw | undefined> {
-    const [draw] = await db
-      .update(draws)
-      .set({ status })
-      .where(eq(draws.id, id))
-      .returning();
-    return draw;
+    try {
+      const [draw] = await db
+        .update(draws)
+        .set({ status })
+        .where(eq(draws.id, id))
+        .returning();
+      return draw;
+    } catch (error) {
+      console.error('Error updating draw status:', error);
+      throw error;
+    }
   }
   
   // Winner methods
   async getWinners(limit: number = 10): Promise<any[]> {
-    const winnerResults = await db
-      .select({
-        id: winners.id,
-        userId: winners.userId,
-        publicKey: users.publicKey,
-        drawId: winners.drawId,
-        drawType: draws.type,
-        prize: draws.prize,
-        createdAt: winners.createdAt,
-        transactionSignature: winners.transactionSignature
-      })
-      .from(winners)
-      .innerJoin(users, eq(winners.userId, users.id))
-      .innerJoin(draws, eq(winners.drawId, draws.id))
-      .orderBy(desc(winners.createdAt))
-      .limit(limit);
-    
-    return winnerResults;
+    try {
+      const winnerResults = await db
+        .select({
+          id: winners.id,
+          userId: winners.userId,
+          drawId: winners.drawId,
+          transactionSignature: winners.transactionSignature,
+          prizeClaimed: winners.prizeClaimed,
+          createdAt: winners.createdAt,
+          draw: {
+            type: draws.type,
+            prize: draws.prize
+          }
+        })
+        .from(winners as any)
+        .leftJoin(draws, eq(winners.drawId, draws.id))
+        .orderBy(desc(winners.createdAt))
+        .limit(limit);
+      
+      return winnerResults;
+    } catch (error) {
+      console.error('Error getting winners:', error);
+      throw error;
+    }
   }
   
-  async createWinner(insertWinner: InsertWinner): Promise<Winner> {
-    const [winner] = await db.insert(winners).values(insertWinner).returning();
-    return winner;
+  async createWinner(winner: InsertWinner): Promise<Winner> {
+    try {
+      const [newWinner] = await db.insert(winners as any).values(winner).returning();
+      return newWinner;
+    } catch (error) {
+      console.error('Error creating winner:', error);
+      throw error;
+    }
   }
   
-  async updateWinnerTransaction(id: number, transactionSignature: string): Promise<Winner | undefined> {
-    const [winner] = await db
-      .update(winners)
-      .set({ transactionSignature, prizeClaimed: true })
-      .where(eq(winners.id, id))
-      .returning();
-    return winner;
+  async updateWinnerTransaction(id: number, signature: string): Promise<Winner | undefined> {
+    try {
+      const [winner] = await db
+        .update(winners as any)
+        .set({ transactionSignature: signature })
+        .where(eq(winners.id, id))
+        .returning();
+      return winner;
+    } catch (error) {
+      console.error('Error updating winner transaction:', error);
+      throw error;
+    }
   }
   
   // Activity methods
@@ -189,7 +241,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const activities = await db
         .select()
-        .from(activities)
+        .from(activities as any)
         .where(eq(activities.userId, userId))
         .orderBy(desc(activities.createdAt))
         .limit(limit);
@@ -201,9 +253,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async createActivity(insertActivity: InsertActivity): Promise<Activity> {
-    const [activity] = await db.insert(activities).values(insertActivity).returning();
-    return activity;
+  async createActivity(activity: InsertActivity): Promise<Activity> {
+    try {
+      const [newActivity] = await db.insert(activities as any).values(activity).returning();
+      return newActivity;
+    } catch (error) {
+      console.error('Error creating activity:', error);
+      throw error;
+    }
   }
 }
 

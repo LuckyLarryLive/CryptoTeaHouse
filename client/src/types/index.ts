@@ -9,7 +9,7 @@ export interface User {
 // Ticket types
 export interface Ticket {
   id: number;
-  userId: number;
+  userId: string;
   type: 'daily' | 'weekly' | 'monthly' | 'yearly';
   quantity: number;
   count: number;
@@ -54,7 +54,7 @@ export interface Winner {
 // Activity types
 export interface Activity {
   id: number;
-  userId: number;
+  userId: string;
   type: 'pull' | 'reward' | 'ticket_earned';
   details: {
     prize?: string;

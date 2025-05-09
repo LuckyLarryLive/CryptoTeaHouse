@@ -33,7 +33,8 @@ export default function Dashboard() {
   // Fetch next draw times
   const { 
     data: nextDraws = [],
-    error: drawsError
+    error: drawsError,
+    isLoading: drawsLoading
   } = useQuery<NextDraw[], Error>({
     queryKey: ['/api/draws/upcoming'],
     enabled: !!user?.id,
@@ -79,7 +80,7 @@ export default function Dashboard() {
       });
     }
   }, [ticketsError, drawsError, activitiesError, toast]);
-  
+
   // Format countdown time
   const formatTimeUntil = (drawTime: string) => {
     const now = new Date();
@@ -102,7 +103,7 @@ export default function Dashboard() {
   
   // Get countdown for specific ticket type
   const getCountdown = (type: string) => {
-    const draw = nextDraws?.find((d: NextDraw) => d.type === type);
+    const draw = nextDraws.find((d: NextDraw) => d.type === type);
     if (!draw) return "TBA";
     return formatTimeUntil(draw.drawTime);
   };
@@ -126,7 +127,7 @@ export default function Dashboard() {
   };
   
   // Show loading state if any data is loading
-  if (!user?.id || ticketsLoading || activitiesLoading) {
+  if (!user?.id || ticketsLoading || activitiesLoading || drawsLoading) {
     return (
       <div className="min-h-screen pt-20 py-8">
         <div className="container mx-auto px-4">
@@ -196,7 +197,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold">
                   {ticketsLoading ? 
                     <span className="inline-block w-10 h-10 bg-dark-700 animate-pulse rounded"></span> :
-                    tickets.find(t => t.type === 'daily')?.count || 0
+                    tickets.find((t: Ticket) => t.type === 'daily')?.count || 0
                   }
                 </div>
                 <div className="text-sm text-light-300 mt-2">Next draw in: {getCountdown('daily')}</div>
@@ -208,7 +209,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold">
                   {ticketsLoading ? 
                     <span className="inline-block w-10 h-10 bg-dark-700 animate-pulse rounded"></span> :
-                    tickets.find(t => t.type === 'weekly')?.count || 0
+                    tickets.find((t: Ticket) => t.type === 'weekly')?.count || 0
                   }
                 </div>
                 <div className="text-sm text-light-300 mt-2">Next draw in: {getCountdown('weekly')}</div>
@@ -220,7 +221,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold">
                   {ticketsLoading ? 
                     <span className="inline-block w-10 h-10 bg-dark-700 animate-pulse rounded"></span> :
-                    tickets.find(t => t.type === 'monthly')?.count || 0
+                    tickets.find((t: Ticket) => t.type === 'monthly')?.count || 0
                   }
                 </div>
                 <div className="text-sm text-light-300 mt-2">Next draw in: {getCountdown('monthly')}</div>
@@ -232,7 +233,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold">
                   {ticketsLoading ? 
                     <span className="inline-block w-10 h-10 bg-dark-700 animate-pulse rounded"></span> :
-                    tickets.find(t => t.type === 'yearly')?.count || 0
+                    tickets.find((t: Ticket) => t.type === 'yearly')?.count || 0
                   }
                 </div>
                 <div className="text-sm text-light-300 mt-2">Next draw in: {getCountdown('yearly')}</div>

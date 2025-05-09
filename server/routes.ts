@@ -14,15 +14,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Public key is required" });
       }
       
-      // For now, just return a mock user object
-      const mockUser = {
-        id: 1,
-        publicKey: publicKey,
-        lastLoginAt: new Date(),
-        createdAt: new Date()
-      };
+      // Get or create user
+      const user = await storage.getUserByPublicKey(publicKey);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
       
-      return res.status(200).json({ user: mockUser });
+      return res.status(200).json({ user });
     } catch (error) {
       console.error("Auth error:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -34,7 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.params.userId;
       
-      if (!userId || userId === '0') {
+      if (!userId) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
       
@@ -121,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.params.userId;
       const limit = Number(req.query.limit) || 10;
       
-      if (!userId || userId === '0') {
+      if (!userId) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
       
@@ -137,22 +135,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/winners", async (req: Request, res: Response) => {
     try {
       const limit = Number(req.query.limit) || 10;
-      
-      // Return mock winners
-      const mockWinners = [
-        {
-          id: 1,
-          userId: 1,
-          publicKey: "mockPublicKey",
-          drawId: 1,
-          drawType: "daily",
-          prize: "0.1",
-          createdAt: new Date(),
-          transactionSignature: null
-        }
-      ];
-      
-      return res.status(200).json(mockWinners);
+      const winners = await storage.getWinners(limit);
+      return res.status(200).json(winners);
     } catch (error) {
       console.error("Get winners error:", error);
       return res.status(500).json({ message: "Internal server error" });
