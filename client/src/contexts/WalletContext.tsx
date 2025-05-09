@@ -78,6 +78,63 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   // Use ref to track listener instance
   const listenerInstanceRef = React.useRef<number>(0);
 
+  // Enhanced user state update function
+  const updateUser = React.useCallback((newUserData: Partial<WalletUser> | null) => {
+    console.log('[WalletContext] updateUser called with:', {
+      newUserData,
+      currentUser: user,
+      isProfileComplete: newUserData?.is_profile_complete
+    });
+
+    setUser(prevUser => {
+      console.log('[WalletContext] setUser callback - previous state:', {
+        prevUser,
+        isProfileComplete: prevUser?.is_profile_complete
+      });
+
+      if (newUserData === null) {
+        console.log('[WalletContext] setUser callback - clearing user state');
+        return null;
+      }
+
+      if (!prevUser) {
+        if (!newUserData.id || !newUserData.publicKey) {
+          console.error('[WalletContext] Cannot create new user without required fields:', newUserData);
+          return null;
+        }
+        console.log('[WalletContext] setUser callback - no previous user, returning new user data');
+        return {
+          id: newUserData.id,
+          publicKey: newUserData.publicKey,
+          provider: 'wallet' as const,
+          is_profile_complete: newUserData.is_profile_complete ?? false,
+          email: newUserData.email,
+          username: newUserData.username,
+          name: newUserData.name,
+          picture: newUserData.picture
+        };
+      }
+
+      const updatedUser: WalletUser = {
+        id: prevUser.id,
+        publicKey: prevUser.publicKey,
+        provider: 'wallet' as const,
+        is_profile_complete: newUserData.is_profile_complete ?? prevUser.is_profile_complete ?? false,
+        email: newUserData.email ?? prevUser.email,
+        username: newUserData.username ?? prevUser.username,
+        name: newUserData.name ?? prevUser.name,
+        picture: newUserData.picture ?? prevUser.picture
+      };
+
+      console.log('[WalletContext] setUser callback - new state:', {
+        updatedUser,
+        isProfileComplete: updatedUser.is_profile_complete
+      });
+
+      return updatedUser;
+    });
+  }, []);
+
   // Log user state changes with more detail
   useEffect(() => {
     console.log('[WalletContext] User state changed:', {
@@ -85,6 +142,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       userId: user?.id,
       isProfileComplete: user?.is_profile_complete,
       userData: user,
+      userStateString: JSON.stringify(user, null, 2),
       stack: new Error().stack
     });
   }, [user]);
@@ -478,7 +536,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = React.useMemo(() => ({
     user,
-    setUser,
+    setUser: updateUser, // Use the enhanced updateUser function
     connect,
     disconnect,
     isConnecting,
@@ -486,7 +544,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     signTransaction,
     signAllTransactions,
     sendTransaction
-  }), [user, isConnecting, walletProvider]);
+  }), [user, isConnecting, walletProvider, updateUser]);
 
   // Log when the context value changes
   useEffect(() => {
@@ -494,7 +552,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       hasUser: !!contextValue.user,
       isProfileComplete: contextValue.user?.is_profile_complete,
       isConnecting: contextValue.isConnecting,
-      hasWalletProvider: !!contextValue.walletProvider
+      hasWalletProvider: !!contextValue.walletProvider,
+      userStateString: JSON.stringify(contextValue.user, null, 2)
     });
   }, [contextValue]);
 

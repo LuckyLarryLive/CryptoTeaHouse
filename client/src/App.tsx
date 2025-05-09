@@ -29,25 +29,9 @@ function AppRoutes() {
       hasUser: !!user,
       isProfileComplete: user?.is_profile_complete,
       currentLocation: location,
-      userData: user
+      userData: user,
+      userStateString: JSON.stringify(user, null, 2)
     });
-
-    if (!walletProvider && location === '/') {
-      console.log('[RouteGuard] Already on home page, no redirect needed');
-      return;
-    }
-    if (!user && location === '/') {
-      console.log('[RouteGuard] Already on home page, no redirect needed');
-      return;
-    }
-    if (!user?.is_profile_complete && location === '/complete-profile') {
-      console.log('[RouteGuard] Already on complete-profile page, no redirect needed');
-      return;
-    }
-    if (user?.is_profile_complete && location === '/dashboard') {
-      console.log('[RouteGuard] Already on dashboard page, no redirect needed');
-      return;
-    }
 
     if (!walletProvider) {
       console.log('[RouteGuard] No wallet provider, redirecting to home');
@@ -56,26 +40,19 @@ function AppRoutes() {
     }
 
     if (!user) {
-      console.log('[RouteGuard] No user data, redirecting to home');
+      console.log('[RouteGuard] No user in context, redirecting to home');
       setLocation('/');
       return;
     }
 
-    if (!user.is_profile_complete && location !== '/complete-profile') {
+    if (location === '/dashboard' && !user.is_profile_complete) {
       console.log('[RouteGuard] Profile incomplete, redirecting to complete-profile. User state:', {
+        userId: user.id,
         isProfileComplete: user.is_profile_complete,
-        currentLocation: location
+        userData: user,
+        userStateString: JSON.stringify(user, null, 2)
       });
       setLocation('/complete-profile');
-      return;
-    }
-
-    if (user.is_profile_complete && location === '/complete-profile') {
-      console.log('[RouteGuard] Profile complete but on complete-profile, redirecting to dashboard. User state:', {
-        isProfileComplete: user.is_profile_complete,
-        currentLocation: location
-      });
-      setLocation('/dashboard');
       return;
     }
   }, [walletProvider, user, location]);
