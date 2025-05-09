@@ -14,6 +14,7 @@ ALTER TABLE user_stats ENABLE ROW LEVEL SECURITY;
 -- Drop existing policies
 DROP POLICY IF EXISTS "Users are viewable by everyone" ON users;
 DROP POLICY IF EXISTS "Users can update their own data" ON users;
+DROP POLICY IF EXISTS "Users can insert their own data" ON users;
 DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON profiles;
 DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
 DROP POLICY IF EXISTS "Users can insert their own profile" ON profiles;
@@ -32,16 +33,25 @@ DROP POLICY IF EXISTS "Referrals are viewable by participants" ON referrals;
 DROP POLICY IF EXISTS "User stats are viewable by owner" ON user_stats;
 
 -- Users policies
-CREATE POLICY "Users are viewable by everyone"
+CREATE POLICY "Users can view their own data"
 ON users FOR SELECT
-TO public
-USING (true);
+TO authenticated
+USING (auth.uid() = id);
 
 CREATE POLICY "Users can update their own data"
 ON users FOR UPDATE
 TO authenticated
 USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can insert their own data"
+ON users FOR INSERT
+TO authenticated
+WITH CHECK (
+  auth.uid() = id AND
+  public_key IS NOT NULL AND
+  email IS NOT NULL
+);
 
 -- Profiles policies
 CREATE POLICY "Profiles are viewable by everyone"
@@ -136,8 +146,9 @@ TO authenticated
 USING (user_id = auth.uid());
 
 -- Add comments to explain the policies
-COMMENT ON POLICY "Users are viewable by everyone" ON users IS 'Allow public read access to user data';
+COMMENT ON POLICY "Users can view their own data" ON users IS 'Allow users to read only their own data';
 COMMENT ON POLICY "Users can update their own data" ON users IS 'Allow users to update their own data';
+COMMENT ON POLICY "Users can insert their own data" ON users IS 'Allow users to create their own user record with required fields';
 COMMENT ON POLICY "Profiles are viewable by everyone" ON profiles IS 'Allow public read access to profiles';
 COMMENT ON POLICY "Users can update their own profile" ON profiles IS 'Allow users to update their own profile';
 COMMENT ON POLICY "Users can insert their own profile" ON profiles IS 'Allow users to create their own profile';
