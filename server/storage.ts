@@ -94,14 +94,41 @@ export class DatabaseStorage implements IStorage {
       const [stats] = await db
         .select()
         .from(userStats)
-        .where(eq(userStats.userId, userId));
+        .where(eq(userStats.userId, userId))
+        .limit(1);
 
       if (!stats) {
+        // Initialize user stats if not found
+        const [newStats] = await db
+          .insert(userStats)
+          .values({
+            userId,
+            currentDailyTickets: 0,
+            currentWeeklyTickets: 0,
+            currentMonthlyTickets: 0,
+            currentYearlyTickets: 0,
+            lifetimeDailyTickets: 0,
+            lifetimeWeeklyTickets: 0,
+            lifetimeMonthlyTickets: 0,
+            lifetimeYearlyTickets: 0,
+            dailyPullCount: 0,
+            dailyRaffleWinCount: 0,
+            dailyRewardWinCount: 0,
+            lifetimePullCount: 0,
+            lifetimeRaffleWinCount: 0,
+            lifetimeRewardWinCount: 0,
+            totalSolSpent: "0",
+            totalRewardBuybacks: "0",
+            createdAt: new Date(),
+            updatedAt: new Date()
+          })
+          .returning();
+
         return [
-          { type: "daily", count: 0 },
-          { type: "weekly", count: 0 },
-          { type: "monthly", count: 0 },
-          { type: "yearly", count: 0 }
+          { type: "daily", count: newStats.currentDailyTickets },
+          { type: "weekly", count: newStats.currentWeeklyTickets },
+          { type: "monthly", count: newStats.currentMonthlyTickets },
+          { type: "yearly", count: newStats.currentYearlyTickets }
         ];
       }
 
@@ -113,7 +140,7 @@ export class DatabaseStorage implements IStorage {
       ];
     } catch (error) {
       console.error('Error getting tickets:', error);
-      throw error;
+      throw new Error('Failed to fetch user tickets');
     }
   }
   
@@ -148,15 +175,40 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(draws)
         .where(sql`draw_time > ${now}`)
-        .orderBy(draws.drawTime);
+        .orderBy(draws.drawTime)
+        .limit(4); // Get next 4 draws (daily, weekly, monthly, yearly)
       
-      return upcomingDraws.map((draw: Draw) => ({
+      if (upcomingDraws.length === 0) {
+        // Create initial draws if none exist
+        const drawTypes = ['daily', 'weekly', 'monthly', 'yearly'];
+        const newDraws = await Promise.all(
+          drawTypes.map(async (type) => {
+            const [draw] = await db
+              .insert(draws)
+              .values({
+                type,
+                drawTime: new Date(now.getTime() + 24 * 60 * 60 * 1000), // 24 hours from now
+                status: 'pending',
+                prize: '0.1',
+                createdAt: now
+              })
+              .returning();
+            return draw;
+          })
+        );
+        return newDraws.map(draw => ({
+          type: draw.type,
+          drawTime: draw.drawTime
+        }));
+      }
+      
+      return upcomingDraws.map(draw => ({
         type: draw.type,
         drawTime: draw.drawTime
       }));
     } catch (error) {
       console.error('Error getting next draws:', error);
-      throw error;
+      throw new Error('Failed to fetch upcoming draws');
     }
   }
   
@@ -200,7 +252,7 @@ export class DatabaseStorage implements IStorage {
             prize: draws.prize
           }
         })
-        .from(winners as any)
+        .from(winners)
         .leftJoin(draws, eq(winners.drawId, draws.id))
         .orderBy(desc(winners.createdAt))
         .limit(limit);
@@ -212,9 +264,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async createWinner(winner: InsertWinner): Promise<Winner> {
+  async createWinner(winner: InsertWinner): Promise<any> {
     try {
-      const [newWinner] = await db.insert(winners as any).values(winner).returning();
+      const [newWinner] = await db.insert(winners).values(winner).returning();
       return newWinner;
     } catch (error) {
       console.error('Error creating winner:', error);
@@ -222,10 +274,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async updateWinnerTransaction(id: number, signature: string): Promise<Winner | undefined> {
+  async updateWinnerTransaction(id: number, signature: string): Promise<any> {
     try {
       const [winner] = await db
-        .update(winners as any)
+        .update(winners)
         .set({ transactionSignature: signature })
         .where(eq(winners.id, id))
         .returning();
@@ -239,17 +291,17 @@ export class DatabaseStorage implements IStorage {
   // Activity methods
   async getUserActivities(userId: string, limit: number = 10): Promise<Activity[]> {
     try {
-      const activities = await db
+      const result = await db
         .select()
-        .from(activities as any)
+        .from(activities)
         .where(eq(activities.userId, userId))
         .orderBy(desc(activities.createdAt))
         .limit(limit);
       
-      return activities;
+      return result;
     } catch (error) {
       console.error('Error getting user activities:', error);
-      throw error;
+      throw new Error('Failed to fetch user activities');
     }
   }
   
