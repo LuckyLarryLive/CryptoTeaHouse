@@ -1,7 +1,5 @@
-// @ts-ignore
 import { corsHeaders } from '../_shared/cors.ts'
 
-// @ts-ignore
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {

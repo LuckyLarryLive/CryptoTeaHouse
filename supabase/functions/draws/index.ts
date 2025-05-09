@@ -1,4 +1,3 @@
-// @ts-ignore
 import { corsHeaders } from '../_shared/cors.ts'
 
 // @ts-ignore
