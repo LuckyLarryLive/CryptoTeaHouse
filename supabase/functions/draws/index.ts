@@ -11,15 +11,16 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify([]),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders,
         status: 200 
       }
     )
   } catch (error) {
+    console.error('Draws function error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders,
         status: 500 
       }
     )

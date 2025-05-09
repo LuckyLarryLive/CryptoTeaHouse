@@ -9,13 +9,14 @@ Deno.serve(async (req) => {
   try {
     // Extract userId from URL
     const url = new URL(req.url)
-    const userId = url.pathname.split('/').pop()
+    const pathParts = url.pathname.split('/')
+    const userId = pathParts[pathParts.length - 1]
 
-    if (!userId) {
+    if (!userId || userId === 'tickets') {
       return new Response(
         JSON.stringify({ error: 'User ID is required' }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: corsHeaders,
           status: 400 
         }
       )
@@ -30,15 +31,16 @@ Deno.serve(async (req) => {
         { type: "yearly", count: 0 }
       ]),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders,
         status: 200 
       }
     )
   } catch (error) {
+    console.error('Tickets function error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders,
         status: 500 
       }
     )
