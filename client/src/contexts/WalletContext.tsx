@@ -95,86 +95,102 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     const instanceId = ++listenerInstanceRef.current;
     console.log(`[WalletContext] Setting up Supabase auth listener (instance ${instanceId})`);
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // CRITICAL: Log the very first thing when callback is entered
+      console.log(`[WalletContext] Instance ${instanceId}: Auth callback entered`, {
+        event,
+        isConnecting: isConnectingRef.current,
+        timestamp: new Date().toISOString()
+      });
+
       // CRITICAL: This must be the absolute first line in the callback
       // No async operations or promises before this check
       if (isConnectingRef.current) {
-        console.log(`[WalletContext] Instance ${instanceId}: Active connection in progress, auth listener is passive, returning immediately`);
-        return;
+        console.log(`[WalletContext] Instance ${instanceId}: Active connection in progress, auth listener is passive, returning immediately`, {
+          timestamp: new Date().toISOString()
+        });
+        return; // Early return - no further processing
       }
 
-      // Only proceed with any other logic if we're not connecting
-      console.log(`[WalletContext] Instance ${instanceId}: Auth state changed:`, {
-        event,
-        hasSession: !!session,
-        currentUser: user,
-        isProfileComplete: user?.is_profile_complete,
-        isConnecting: isConnectingRef.current,
-        stack: new Error().stack
-      });
+      // Wrap the rest of the callback in an async IIFE to ensure proper async handling
+      (async () => {
+        try {
+          // Only proceed with any other logic if we're not connecting
+          console.log(`[WalletContext] Instance ${instanceId}: Auth state changed:`, {
+            event,
+            hasSession: !!session,
+            currentUser: user,
+            isProfileComplete: user?.is_profile_complete,
+            isConnecting: isConnectingRef.current,
+            timestamp: new Date().toISOString()
+          });
 
-      if (event === 'SIGNED_OUT') {
-        console.log(`[WalletContext] Instance ${instanceId}: User signed out, clearing state`);
-        setUser(null);
-        setWalletProvider(null);
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        console.log(`[WalletContext] Instance ${instanceId}: User signed in, checking profile:`, {
-          hasExistingUser: !!user,
-          existingUserId: user?.id,
-          sessionUserId: session.user.id,
-          isProfileComplete: user?.is_profile_complete
-        });
+          if (event === 'SIGNED_OUT') {
+            console.log(`[WalletContext] Instance ${instanceId}: User signed out, clearing state`);
+            setUser(null);
+            setWalletProvider(null);
+          } else if (event === 'SIGNED_IN' && session?.user) {
+            console.log(`[WalletContext] Instance ${instanceId}: User signed in, checking profile:`, {
+              hasExistingUser: !!user,
+              existingUserId: user?.id,
+              sessionUserId: session.user.id,
+              isProfileComplete: user?.is_profile_complete
+            });
 
-        // Only proceed if we don't have a user or if the session user is different
-        if (!user || user.id !== session.user.id) {
-          console.log(`[WalletContext] Instance ${instanceId}: No matching user in context, fetching profile`);
-          try {
-            const { data: profile, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
+            // Only proceed if we don't have a user or if the session user is different
+            if (!user || user.id !== session.user.id) {
+              console.log(`[WalletContext] Instance ${instanceId}: No matching user in context, fetching profile`);
+              try {
+                const { data: profile, error } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .single();
 
-            if (error) {
-              console.error(`[WalletContext] Instance ${instanceId}: Error fetching profile:`, error);
-              return;
-            }
+                if (error) {
+                  console.error(`[WalletContext] Instance ${instanceId}: Error fetching profile:`, error);
+                  return;
+                }
 
-            if (profile) {
-              console.log(`[WalletContext] Instance ${instanceId}: Found profile:`, {
-                profileId: profile.id,
-                isProfileComplete: profile.is_profile_complete,
-                existingUserState: user
-              });
+                if (profile) {
+                  console.log(`[WalletContext] Instance ${instanceId}: Found profile:`, {
+                    profileId: profile.id,
+                    isProfileComplete: profile.is_profile_complete,
+                    existingUserState: user
+                  });
 
-              // Only update if the profile data is different from current user state
-              if (!user || 
-                  user.id !== profile.id || 
-                  user.is_profile_complete !== profile.is_profile_complete) {
-                console.log(`[WalletContext] Instance ${instanceId}: Updating user state with profile data`);
-                setUser({
-                  id: profile.id,
-                  publicKey: profile.auth_provider_id,
-                  email: profile.email,
-                  username: profile.display_name,
-                  name: profile.display_name,
-                  picture: profile.profile_picture_url,
-                  provider: 'wallet',
-                  is_profile_complete: profile.is_profile_complete
-                });
-              } else {
-                console.log(`[WalletContext] Instance ${instanceId}: Profile data matches current user state, skipping update`);
+                  // Only update if the profile data is different from current user state
+                  if (!user || 
+                      user.id !== profile.id || 
+                      user.is_profile_complete !== profile.is_profile_complete) {
+                    console.log(`[WalletContext] Instance ${instanceId}: Updating user state with profile data`);
+                    setUser({
+                      id: profile.id,
+                      publicKey: profile.auth_provider_id,
+                      email: profile.email,
+                      username: profile.display_name,
+                      name: profile.display_name,
+                      picture: profile.profile_picture_url,
+                      provider: 'wallet',
+                      is_profile_complete: profile.is_profile_complete
+                    });
+                  } else {
+                    console.log(`[WalletContext] Instance ${instanceId}: Profile data matches current user state, skipping update`);
+                  }
+                } else {
+                  console.log(`[WalletContext] Instance ${instanceId}: No profile found for session user`);
+                }
+              } catch (error) {
+                console.error(`[WalletContext] Instance ${instanceId}: Error in profile fetch:`, error);
               }
             } else {
-              console.log(`[WalletContext] Instance ${instanceId}: No profile found for session user`);
+              console.log(`[WalletContext] Instance ${instanceId}: User already exists in context with matching ID, skipping profile fetch`);
             }
-          } catch (error) {
-            console.error(`[WalletContext] Instance ${instanceId}: Error in profile fetch:`, error);
           }
-        } else {
-          console.log(`[WalletContext] Instance ${instanceId}: User already exists in context with matching ID, skipping profile fetch`);
+        } catch (error) {
+          console.error(`[WalletContext] Instance ${instanceId}: Unexpected error in auth callback:`, error);
         }
-      }
+      })();
     });
 
     return () => {
