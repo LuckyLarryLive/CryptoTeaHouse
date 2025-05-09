@@ -91,26 +91,19 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     console.log('[WalletContext] Setting up Supabase auth listener');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Immediately check connection state and bail if connecting
+      if (isConnectingRef.current) {
+        return; // Do absolutely nothing if connecting
+      }
+
+      // Only proceed with logging and state updates if not connecting
       console.log('[WalletContext] Auth state changed:', {
         event,
         hasSession: !!session,
         currentUser: user,
         isProfileComplete: user?.is_profile_complete,
-        isConnecting: isConnectingRef.current,
         stack: new Error().stack
       });
-
-      // During connection, only handle SIGNED_OUT
-      if (isConnectingRef.current) {
-        if (event === 'SIGNED_OUT') {
-          console.log('[WalletContext] User signed out during connection, clearing state');
-          setUser(null);
-          setWalletProvider(null);
-        } else {
-          console.log('[WalletContext] Active connection in progress, skipping auth state change handling');
-        }
-        return;
-      }
 
       if (event === 'SIGNED_OUT') {
         console.log('[WalletContext] User signed out, clearing state');
@@ -185,6 +178,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   const connect = async (walletType: WalletProviderType) => {
     console.log('[WalletContext] Starting connection process...');
     setIsConnecting(true);
+    isConnectingRef.current = true; // Set ref immediately
     try {
       let walletToConnect: PhantomWallet;
 
@@ -400,7 +394,9 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         variant: "destructive"
       });
     } finally {
+      console.log('[WalletContext] Connection process complete, cleaning up...');
       setIsConnecting(false);
+      isConnectingRef.current = false; // Clear ref in finally
     }
   };
 
