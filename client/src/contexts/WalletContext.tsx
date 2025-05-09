@@ -102,6 +102,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         password: publicKeyStr
       });
 
+      let authUser = authData?.user;
+
       if (authError) {
         console.log("[WalletContext] Sign in failed, attempting sign up...");
         
@@ -126,40 +128,74 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           throw new Error("Failed to create auth user - no user data returned");
         }
 
-        // Log the signup data to verify user ID
+        authUser = signUpData.user;
         console.log("[WalletContext] Signup successful. Auth user data:", {
-          id: signUpData.user.id,
-          email: signUpData.user.email,
-          metadata: signUpData.user.user_metadata
+          id: authUser.id,
+          email: authUser.email,
+          metadata: authUser.user_metadata
         });
+      }
 
-        // First create a user record in the users table
-        const { data: newUser, error: userError } = await supabase
+      if (!authUser) {
+        throw new Error("No authenticated user found after sign in/sign up");
+      }
+
+      // Check if user record exists
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (userError && userError.code !== 'PGRST116') {
+        console.error("Error checking user record:", JSON.stringify(userError, null, 2));
+        throw userError;
+      }
+
+      // Create user record if it doesn't exist
+      if (!existingUser) {
+        console.log("[WalletContext] Creating new user record...");
+        const { data: newUser, error: createUserError } = await supabase
           .from('users')
           .insert({
-            id: signUpData.user.id,
+            id: authUser.id,
             public_key: publicKeyStr,
-            email: signUpData.user.email,
+            email: authUser.email,
             created_at: new Date().toISOString()
           })
           .select()
           .single();
 
-        if (userError) {
-          console.error("Error creating user record:", JSON.stringify(userError, null, 2));
-          throw userError;
+        if (createUserError) {
+          console.error("Error creating user record:", JSON.stringify(createUserError, null, 2));
+          throw createUserError;
         }
 
         console.log("[WalletContext] Created user record:", newUser);
+      }
 
-        // Create initial profile
-        const { data: newProfile, error: profileError } = await supabase
+      // Check if profile exists
+      const { data: existingProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error("Error checking profile:", JSON.stringify(profileError, null, 2));
+        throw profileError;
+      }
+
+      // Create profile if it doesn't exist
+      if (!existingProfile) {
+        console.log("[WalletContext] Creating new profile...");
+        const { data: newProfile, error: createProfileError } = await supabase
           .from('profiles')
           .insert({
-            id: signUpData.user.id, // Using the same ID from auth user
+            id: authUser.id,
             auth_provider_id: publicKeyStr,
             display_name: '', // Will be set during profile completion
-            handle: `user_${signUpData.user.id.slice(0, 8)}`, // Using auth user ID for handle
+            handle: `user_${authUser.id.slice(0, 8)}`, // Using auth user ID for handle
             is_profile_complete: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -167,16 +203,12 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           .select()
           .single();
 
-        if (profileError) {
-          console.error("Error creating profile:", JSON.stringify(profileError, null, 2));
-          throw profileError;
+        if (createProfileError) {
+          console.error("Error creating profile:", JSON.stringify(createProfileError, null, 2));
+          throw createProfileError;
         }
 
-        if (!newProfile) {
-          throw new Error("Failed to create profile - no data returned");
-        }
-
-        console.log("[WalletContext] Successfully created new profile:", newProfile);
+        console.log("[WalletContext] Created new profile:", newProfile);
 
         // Store temporary wallet data
         localStorage.setItem('tempWalletData', JSON.stringify({
@@ -187,7 +219,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         
         // Set temporary user state
         setUser({
-          id: signUpData.user.id,
+          id: authUser.id,
           publicKey: publicKeyStr,
           provider: 'wallet'
         });
@@ -196,20 +228,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         console.log("Redirecting to complete profile page...");
         setLocation('/complete-profile');
       } else {
-        // Sign in successful, get the user's profile
-        const { data: existingProfile, error: profileError } = await supabase
-          .rpc('get_profile_by_wallet', { wallet_address: publicKeyStr });
-
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
-          throw profileError;
-        }
-
-        if (!existingProfile) {
-          throw new Error("Profile not found for authenticated user");
-        }
-
-        // User exists, set the user data
+        // Profile exists, set the user data
         setUser({
           id: existingProfile.id,
           publicKey: publicKeyStr,
