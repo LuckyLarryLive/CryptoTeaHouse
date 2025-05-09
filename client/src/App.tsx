@@ -24,10 +24,43 @@ function AppRoutes() {
   const isConnected = !!user && !!walletProvider;
 
   useEffect(() => {
-    if (isConnected && !user?.is_profile_complete && location !== "/complete-profile") {
-      setLocation("/complete-profile");
+    console.log('[RouteGuard] State:', {
+      isConnected: !!walletProvider,
+      hasUser: !!user,
+      isProfileComplete: user?.is_profile_complete,
+      currentLocation: location,
+      userData: user
+    });
+
+    if (!walletProvider && location === '/') return;
+    if (!user && location === '/') return;
+    if (!user?.is_profile_complete && location === '/complete-profile') return;
+    if (user?.is_profile_complete && location === '/dashboard') return;
+
+    if (!walletProvider) {
+      console.log('[RouteGuard] No wallet provider, redirecting to home');
+      setLocation('/');
+      return;
     }
-  }, [isConnected, user, location, setLocation]);
+
+    if (!user) {
+      console.log('[RouteGuard] No user data, redirecting to home');
+      setLocation('/');
+      return;
+    }
+
+    if (!user.is_profile_complete && location !== '/complete-profile') {
+      console.log('[RouteGuard] Profile incomplete, redirecting to complete-profile');
+      setLocation('/complete-profile');
+      return;
+    }
+
+    if (user.is_profile_complete && location === '/complete-profile') {
+      console.log('[RouteGuard] Profile complete but on complete-profile, redirecting to dashboard');
+      setLocation('/dashboard');
+      return;
+    }
+  }, [walletProvider, user, location]);
 
   return (
     <Switch>
