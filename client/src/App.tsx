@@ -30,7 +30,14 @@ function AppRoutes() {
       isProfileComplete: user?.is_profile_complete,
       currentLocation: location,
       userData: user,
-      userStateString: JSON.stringify(user, null, 2)
+      userStateString: JSON.stringify(user, null, 2),
+      userStateDetails: user ? {
+        id: user.id,
+        isProfileComplete: user.is_profile_complete,
+        provider: user.provider,
+        hasUsername: !!user.username,
+        hasEmail: !!user.email
+      } : null
     });
 
     if (!walletProvider) {
@@ -50,7 +57,14 @@ function AppRoutes() {
         userId: user.id,
         isProfileComplete: user.is_profile_complete,
         userData: user,
-        userStateString: JSON.stringify(user, null, 2)
+        userStateString: JSON.stringify(user, null, 2),
+        userStateDetails: {
+          id: user.id,
+          isProfileComplete: user.is_profile_complete,
+          provider: user.provider,
+          hasUsername: !!user.username,
+          hasEmail: !!user.email
+        }
       });
       setLocation('/complete-profile');
       return;

@@ -78,18 +78,20 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   // Use ref to track listener instance
   const listenerInstanceRef = React.useRef<number>(0);
 
-  // Enhanced user state update function
+  // Enhanced user state update function with explicit is_profile_complete handling
   const updateUser = React.useCallback((newUserData: Partial<WalletUser> | null) => {
     console.log('[WalletContext] updateUser called with:', {
       newUserData,
       currentUser: user,
-      isProfileComplete: newUserData?.is_profile_complete
+      isProfileComplete: newUserData?.is_profile_complete,
+      newUserDataString: JSON.stringify(newUserData, null, 2)
     });
 
     setUser(prevUser => {
       console.log('[WalletContext] setUser callback - previous state:', {
         prevUser,
-        isProfileComplete: prevUser?.is_profile_complete
+        isProfileComplete: prevUser?.is_profile_complete,
+        prevUserString: JSON.stringify(prevUser, null, 2)
       });
 
       if (newUserData === null) {
@@ -102,8 +104,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           console.error('[WalletContext] Cannot create new user without required fields:', newUserData);
           return null;
         }
-        console.log('[WalletContext] setUser callback - no previous user, returning new user data');
-        return {
+        console.log('[WalletContext] setUser callback - no previous user, creating new user');
+        const newUser: WalletUser = {
           id: newUserData.id,
           publicKey: newUserData.publicKey,
           provider: 'wallet' as const,
@@ -113,22 +115,35 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           name: newUserData.name,
           picture: newUserData.picture
         };
+        console.log('[WalletContext] setUser callback - new user created:', {
+          newUser,
+          isProfileComplete: newUser.is_profile_complete,
+          newUserString: JSON.stringify(newUser, null, 2)
+        });
+        return newUser;
       }
+
+      // For updates, explicitly handle is_profile_complete
+      const isProfileComplete = newUserData.is_profile_complete !== undefined 
+        ? newUserData.is_profile_complete 
+        : prevUser.is_profile_complete;
 
       const updatedUser: WalletUser = {
         id: prevUser.id,
         publicKey: prevUser.publicKey,
         provider: 'wallet' as const,
-        is_profile_complete: newUserData.is_profile_complete ?? prevUser.is_profile_complete ?? false,
+        is_profile_complete: isProfileComplete,
         email: newUserData.email ?? prevUser.email,
         username: newUserData.username ?? prevUser.username,
         name: newUserData.name ?? prevUser.name,
         picture: newUserData.picture ?? prevUser.picture
       };
 
-      console.log('[WalletContext] setUser callback - new state:', {
+      console.log('[WalletContext] setUser callback - user updated:', {
         updatedUser,
-        isProfileComplete: updatedUser.is_profile_complete
+        isProfileComplete: updatedUser.is_profile_complete,
+        updatedUserString: JSON.stringify(updatedUser, null, 2),
+        wasProfileCompleteUpdated: newUserData.is_profile_complete !== undefined
       });
 
       return updatedUser;
