@@ -32,10 +32,22 @@ function AppRoutes() {
       userData: user
     });
 
-    if (!walletProvider && location === '/') return;
-    if (!user && location === '/') return;
-    if (!user?.is_profile_complete && location === '/complete-profile') return;
-    if (user?.is_profile_complete && location === '/dashboard') return;
+    if (!walletProvider && location === '/') {
+      console.log('[RouteGuard] Already on home page, no redirect needed');
+      return;
+    }
+    if (!user && location === '/') {
+      console.log('[RouteGuard] Already on home page, no redirect needed');
+      return;
+    }
+    if (!user?.is_profile_complete && location === '/complete-profile') {
+      console.log('[RouteGuard] Already on complete-profile page, no redirect needed');
+      return;
+    }
+    if (user?.is_profile_complete && location === '/dashboard') {
+      console.log('[RouteGuard] Already on dashboard page, no redirect needed');
+      return;
+    }
 
     if (!walletProvider) {
       console.log('[RouteGuard] No wallet provider, redirecting to home');
@@ -50,13 +62,19 @@ function AppRoutes() {
     }
 
     if (!user.is_profile_complete && location !== '/complete-profile') {
-      console.log('[RouteGuard] Profile incomplete, redirecting to complete-profile');
+      console.log('[RouteGuard] Profile incomplete, redirecting to complete-profile. User state:', {
+        isProfileComplete: user.is_profile_complete,
+        currentLocation: location
+      });
       setLocation('/complete-profile');
       return;
     }
 
     if (user.is_profile_complete && location === '/complete-profile') {
-      console.log('[RouteGuard] Profile complete but on complete-profile, redirecting to dashboard');
+      console.log('[RouteGuard] Profile complete but on complete-profile, redirecting to dashboard. User state:', {
+        isProfileComplete: user.is_profile_complete,
+        currentLocation: location
+      });
       setLocation('/dashboard');
       return;
     }

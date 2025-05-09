@@ -259,16 +259,26 @@ export default function CompleteProfile() {
       console.log('User data initialized successfully');
 
       // Update wallet context with new user data
-      setUser({
+      const updatedUser = {
         id: currentUser.id,
         publicKey: user.publicKey,
         email: formData.email,
         username: formData.displayName,
         name: formData.displayName,
         picture: profilePictureUrl,
-        provider: 'wallet',
+        provider: 'wallet' as const,
         is_profile_complete: true
+      };
+      
+      console.log('[CompleteProfile] Setting user state:', {
+        before: user,
+        after: updatedUser,
+        isProfileComplete: updatedUser.is_profile_complete
       });
+      
+      setUser(updatedUser);
+      
+      console.log('[CompleteProfile] User state updated');
 
       // Clean up temporary data
       localStorage.removeItem('tempWalletData');

@@ -71,6 +71,26 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   const [walletProvider, setWalletProvider] = useState<PhantomWallet | null>(null);
   const { toast } = useToast();
 
+  // Log user state changes
+  useEffect(() => {
+    console.log('[WalletContext] User state changed:', {
+      hasUser: !!user,
+      userId: user?.id,
+      isProfileComplete: user?.is_profile_complete,
+      userData: user
+    });
+  }, [user]);
+
+  // Wrap setUser to ensure state updates are tracked
+  const updateUser = (newUser: WalletUser | null) => {
+    console.log('[WalletContext] Updating user state:', {
+      before: user,
+      after: newUser,
+      isProfileComplete: newUser?.is_profile_complete
+    });
+    setUser(newUser);
+  };
+
   const connect = async (walletType: WalletProviderType) => {
     setIsConnecting(true);
     try {
@@ -345,7 +365,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   return (
     <WalletContext.Provider value={{ 
       user, 
-      setUser, 
+      setUser: updateUser, 
       connect, 
       disconnect,
       isConnecting,
