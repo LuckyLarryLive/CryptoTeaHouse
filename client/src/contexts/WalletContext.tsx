@@ -100,9 +100,15 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         stack: new Error().stack
       });
 
-      // Don't interfere with an active connection attempt
+      // During connection, only handle SIGNED_OUT
       if (isConnectingRef.current) {
-        console.log('[WalletContext] Active connection in progress, skipping auth state change handling');
+        if (event === 'SIGNED_OUT') {
+          console.log('[WalletContext] User signed out during connection, clearing state');
+          setUser(null);
+          setWalletProvider(null);
+        } else {
+          console.log('[WalletContext] Active connection in progress, skipping auth state change handling');
+        }
         return;
       }
 
@@ -199,14 +205,17 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       console.log('[WalletContext] Starting wallet connection process...', { publicKey });
 
       // Try to sign in first
+      console.log('[WalletContext] BEFORE supabase.auth.signInWithPassword');
       let { data: { user: authUser, session }, error: authError } = await supabase.auth.signInWithPassword({
         email: `${publicKey.toLowerCase()}@wallet.local`,
         password: publicKey
       });
+      console.log('[WalletContext] AFTER supabase.auth.signInWithPassword', { authUser, session, authError });
 
       // If sign in fails with invalid credentials, try to sign up
       if (authError?.message?.includes('Invalid login credentials')) {
         console.log('[WalletContext] Sign in failed, attempting sign up...');
+        console.log('[WalletContext] BEFORE supabase.auth.signUp');
         const { data: { user: newUser, session: newSession }, error: signUpError } = await supabase.auth.signUp({
           email: `${publicKey.toLowerCase()}@wallet.local`,
           password: publicKey,
@@ -217,18 +226,29 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
             }
           }
         });
+        console.log('[WalletContext] AFTER supabase.auth.signUp', { newUser, newSession, signUpError });
 
-        if (signUpError) throw signUpError;
-        if (!newUser) throw new Error('No user data received after sign up');
+        if (signUpError) {
+          console.error('[WalletContext] Sign up error:', signUpError);
+          throw signUpError;
+        }
+        if (!newUser) {
+          console.error('[WalletContext] No user data received after sign up');
+          throw new Error('No user data received after sign up');
+        }
         
         authUser = newUser;
         session = newSession;
         console.log('[WalletContext] New user created:', newUser.id);
       } else if (authError) {
+        console.error('[WalletContext] Sign in error:', authError);
         throw authError;
       }
 
-      if (!authUser) throw new Error('No user data received after authentication');
+      if (!authUser) {
+        console.error('[WalletContext] No user data received after authentication');
+        throw new Error('No user data received after authentication');
+      }
 
       // Create initial user record if it doesn't exist
       console.log('[WalletContext] Checking for existing user record...');
