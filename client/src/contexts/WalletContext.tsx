@@ -409,39 +409,77 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         event,
         hasSession: !!session,
         currentUser: user,
-        isProfileComplete: user?.is_profile_complete
+        isProfileComplete: user?.is_profile_complete,
+        isConnecting,
+        stack: new Error().stack
       });
+
+      // Don't interfere with an active connection attempt
+      if (isConnecting) {
+        console.log('[WalletContext] Active connection in progress, skipping auth state change handling');
+        return;
+      }
 
       if (event === 'SIGNED_OUT') {
         console.log('[WalletContext] User signed out, clearing state');
         setUser(null);
         setWalletProvider(null);
       } else if (event === 'SIGNED_IN' && session?.user) {
-        console.log('[WalletContext] User signed in, checking profile');
-        // Only fetch profile if we don't already have user data
-        if (!user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+        console.log('[WalletContext] User signed in, checking profile:', {
+          hasExistingUser: !!user,
+          existingUserId: user?.id,
+          sessionUserId: session.user.id,
+          isProfileComplete: user?.is_profile_complete
+        });
 
-          if (profile) {
-            console.log('[WalletContext] Found profile:', {
-              profile,
-              isProfileComplete: profile.is_profile_complete
-            });
-            setUser({
-              id: profile.id,
-              publicKey: profile.auth_provider_id,
-              email: profile.email,
-              username: profile.display_name,
-              name: profile.display_name,
-              picture: profile.profile_picture_url,
-              provider: 'wallet',
-              is_profile_complete: profile.is_profile_complete
-            });
+        // Only proceed if we don't have a user or if the session user is different
+        if (!user || user.id !== session.user.id) {
+          console.log('[WalletContext] No matching user in context, fetching profile');
+          try {
+            const { data: profile, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+
+            if (error) {
+              console.error('[WalletContext] Error fetching profile:', error);
+              return;
+            }
+
+            if (profile) {
+              console.log('[WalletContext] Found profile:', {
+                profileId: profile.id,
+                isProfileComplete: profile.is_profile_complete,
+                existingUserState: user
+              });
+
+              // Only update if the profile data is different from current user state
+              if (!user || 
+                  user.id !== profile.id || 
+                  user.is_profile_complete !== profile.is_profile_complete) {
+                console.log('[WalletContext] Updating user state with profile data');
+                setUser({
+                  id: profile.id,
+                  publicKey: profile.auth_provider_id,
+                  email: profile.email,
+                  username: profile.display_name,
+                  name: profile.display_name,
+                  picture: profile.profile_picture_url,
+                  provider: 'wallet',
+                  is_profile_complete: profile.is_profile_complete
+                });
+              } else {
+                console.log('[WalletContext] Profile data matches current user state, skipping update');
+              }
+            } else {
+              console.log('[WalletContext] No profile found for session user');
+            }
+          } catch (error) {
+            console.error('[WalletContext] Error in profile fetch:', error);
           }
+        } else {
+          console.log('[WalletContext] User already exists in context with matching ID, skipping profile fetch');
         }
       }
     });
@@ -450,7 +488,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       console.log('[WalletContext] Cleaning up Supabase auth listener');
       subscription.unsubscribe();
     };
-  }, []); // Empty dependency array since we only want to set up the listener once
+  }, [user, isConnecting]); // Add isConnecting to dependencies to properly track connection state
 
   // Clean up temporary wallet data on unmount
   useEffect(() => {
