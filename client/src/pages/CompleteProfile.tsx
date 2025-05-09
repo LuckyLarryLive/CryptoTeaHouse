@@ -115,116 +115,49 @@ export default function CompleteProfile() {
         });
 
         if (signInError || !authUser) {
-          throw new Error("Failed to authenticate user");
-        }
+          // If sign in fails, create a new user
+          const { data: { user: newUser }, error: createError } = await supabase.auth.signUp({
+            email: `${user.publicKey.toLowerCase()}@wallet.local`,
+            password: user.publicKey
+          });
 
-        currentUser = authUser;
+          if (createError || !newUser) {
+            throw new Error("Failed to create user account");
+          }
+
+          currentUser = newUser;
+        } else {
+          currentUser = authUser;
+        }
       }
 
       // Handle profile picture upload if selected
       let profilePictureUrl: string | undefined = undefined;
       if (formData.profilePicture) {
-        const file = formData.profilePicture;
-        
-        // Log detailed file information
-        console.log('File object details:', {
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          lastModified: file.lastModified,
-          isFile: file instanceof File,
-          constructor: file.constructor.name,
-          prototype: Object.getPrototypeOf(file).constructor.name,
-          hasOwnProperty: {
-            name: file.hasOwnProperty('name'),
-            type: file.hasOwnProperty('type'),
-            size: file.hasOwnProperty('size'),
-            lastModified: file.hasOwnProperty('lastModified')
-          }
-        });
-
-        // Log the first few bytes of the file to verify content
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const arrayBuffer = e.target?.result;
-          const bytes = new Uint8Array(arrayBuffer as ArrayBuffer).slice(0, 16);
-          console.log('First 16 bytes of file:', Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' '));
-        };
-        reader.readAsArrayBuffer(file);
-
         try {
-          // Validate file type
-          const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-          if (!allowedTypes.includes(file.type)) {
-            throw new Error('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
-          }
-
-          // Validate file size (max 5MB)
-          const maxSize = 5 * 1024 * 1024; // 5MB
-          if (file.size > maxSize) {
-            throw new Error('File size too large. Maximum size is 5MB.');
-          }
-
+          const file = formData.profilePicture;
           const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
           const fileName = `${currentUser.id}/profile.${fileExt}`;
 
-          // Log upload options and file details
-          const uploadOptions = {
-            cacheControl: '3600',
-            upsert: true,
-            contentType: file.type
-          };
-          console.log('Storage upload details:', {
-            fileName,
-            options: uploadOptions,
-            fileType: file.type,
-            fileSize: file.size,
-            fileLastModified: file.lastModified,
-            supabaseVersion: '2.49.4',
-            fileObject: {
-              name: file.name,
-              type: file.type,
-              size: file.size,
-              lastModified: file.lastModified,
-              isFile: file instanceof File,
-              constructor: file.constructor.name
-            }
-          });
-
-          // Create a new FormData to verify the file
-          const formData = new FormData();
-          formData.append('file', file);
-          console.log('FormData verification:', {
-            hasFile: formData.has('file'),
-            fileType: formData.get('file') instanceof File ? (formData.get('file') as File).type : 'not a file'
-          });
-
-          // Upload the file with explicit content type
-          const { data: uploadData, error: uploadError } = await storageClient.storage
+          const { error: uploadError } = await storageClient.storage
             .from('profile-pictures')
-            .upload(fileName, file, uploadOptions);
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: true
+            });
 
-          if (uploadError) {
-            console.error('Upload error details:', uploadError);
-            throw uploadError;
-          }
+          if (uploadError) throw uploadError;
 
-          // Get the public URL
           const { data: { publicUrl } } = storageClient.storage
             .from('profile-pictures')
             .getPublicUrl(fileName);
             
           profilePictureUrl = publicUrl;
-          console.log('Profile picture uploaded successfully:', {
-            publicUrl,
-            fileName,
-            contentType: file.type
-          });
         } catch (error) {
           console.error('Error uploading profile picture:', error);
           toast({
             title: "Warning",
-            description: error instanceof Error ? error.message : "Failed to upload profile picture. Continuing with profile creation...",
+            description: "Failed to upload profile picture. Continuing with profile creation...",
             variant: "destructive"
           });
         }
@@ -247,12 +180,9 @@ export default function CompleteProfile() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
-        ])
-        .select()
-        .single();
+        ]);
 
       if (profileError) {
-        console.error('Profile creation error:', profileError);
         throw profileError;
       }
 
@@ -284,7 +214,6 @@ export default function CompleteProfile() {
         ]);
 
       if (statsError) {
-        console.error('Stats initialization error:', statsError);
         throw new Error('Failed to initialize user stats');
       }
 
@@ -303,7 +232,6 @@ export default function CompleteProfile() {
         ]);
 
       if (activityError) {
-        console.error('Activity creation error:', activityError);
         throw new Error('Failed to create initial activity');
       }
 
