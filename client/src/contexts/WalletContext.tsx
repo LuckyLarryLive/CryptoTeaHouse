@@ -91,12 +91,13 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     console.log('[WalletContext] Setting up Supabase auth listener');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Immediately check connection state and bail if connecting
+      // CRITICAL: This must be the absolute first line in the callback
       if (isConnectingRef.current) {
-        return; // Do absolutely nothing if connecting
+        console.log('[WalletContext] Active connection in progress, auth listener is passive, returning immediately');
+        return;
       }
 
-      // Only proceed with logging and state updates if not connecting
+      // Only proceed with any other logic if we're not connecting
       console.log('[WalletContext] Auth state changed:', {
         event,
         hasSession: !!session,
