@@ -1,16 +1,11 @@
 import { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWallet } from "@/contexts/WalletContext";
 import { useToast } from "@/hooks/use-toast";
 import LuckyCat from "@/components/LuckyCat";
-import { Activity } from "@/types";
-
-interface Ticket {
-  type: string;
-  count: number;
-}
+import { Activity, Ticket } from "@/types";
 
 interface NextDraw {
   type: string;
@@ -27,27 +22,63 @@ export default function Dashboard() {
   const {
     data: tickets = [],
     isLoading: ticketsLoading,
+    error: ticketsError,
     refetch: refetchTickets
-  } = useQuery<Ticket[]>({
+  } = useQuery<Ticket[], Error>({
     queryKey: [`/api/user/${user?.id}/tickets`],
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    retry: 1
   });
   
   // Fetch next draw times
-  const { data: nextDraws = [] } = useQuery<NextDraw[]>({
+  const { 
+    data: nextDraws = [],
+    error: drawsError
+  } = useQuery<NextDraw[], Error>({
     queryKey: ['/api/draws/upcoming'],
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    retry: 1
   });
   
   // Fetch user activities
   const {
     data: activities = [],
     isLoading: activitiesLoading,
+    error: activitiesError,
     refetch: refetchActivities
-  } = useQuery<Activity[]>({
+  } = useQuery<Activity[], Error>({
     queryKey: [`/api/user/${user?.id}/activities`],
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    retry: 1
   });
+
+  // Handle errors
+  useEffect(() => {
+    if (ticketsError) {
+      console.error('Error fetching tickets:', ticketsError);
+      toast({
+        title: "Error",
+        description: "Failed to load tickets. Please try again.",
+        variant: "destructive"
+      });
+    }
+    if (drawsError) {
+      console.error('Error fetching draws:', drawsError);
+      toast({
+        title: "Error",
+        description: "Failed to load upcoming draws. Please try again.",
+        variant: "destructive"
+      });
+    }
+    if (activitiesError) {
+      console.error('Error fetching activities:', activitiesError);
+      toast({
+        title: "Error",
+        description: "Failed to load activities. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [ticketsError, drawsError, activitiesError, toast]);
   
   // Format countdown time
   const formatTimeUntil = (drawTime: string) => {
@@ -71,7 +102,7 @@ export default function Dashboard() {
   
   // Get countdown for specific ticket type
   const getCountdown = (type: string) => {
-    const draw = nextDraws.find(d => d.type === type);
+    const draw = nextDraws?.find((d: NextDraw) => d.type === type);
     if (!draw) return "TBA";
     return formatTimeUntil(draw.drawTime);
   };
@@ -94,6 +125,55 @@ export default function Dashboard() {
     });
   };
   
+  // Show loading state if any data is loading
+  if (!user?.id || ticketsLoading || activitiesLoading) {
+    return (
+      <div className="min-h-screen pt-20 py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col items-center">
+            <div className="w-full max-w-4xl">
+              <div className="animate-pulse space-y-8">
+                <div className="h-12 bg-dark-700 rounded-lg w-3/4 mx-auto"></div>
+                <div className="h-96 bg-dark-700 rounded-xl"></div>
+                <div className="h-12 bg-dark-700 rounded-lg w-1/2 mx-auto"></div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-32 bg-dark-700 rounded-xl"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if any data failed to load
+  if (ticketsError || drawsError || activitiesError) {
+    return (
+      <div className="min-h-screen pt-20 py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col items-center">
+            <div className="bg-dark-800 rounded-xl p-8 text-center">
+              <h2 className="text-2xl font-bold text-red-400 mb-4">Something went wrong</h2>
+              <p className="text-light-300 mb-4">Failed to load dashboard data. Please try again.</p>
+              <Button
+                onClick={() => {
+                  refetchTickets();
+                  refetchActivities();
+                }}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Retry
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pt-20 py-8">
       <div className="container mx-auto px-4">

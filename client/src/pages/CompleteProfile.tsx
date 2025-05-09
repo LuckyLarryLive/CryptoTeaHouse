@@ -256,6 +256,57 @@ export default function CompleteProfile() {
         throw profileError;
       }
 
+      // Initialize user stats
+      const { error: statsError } = await supabase
+        .from('user_stats')
+        .upsert([
+          {
+            user_id: currentUser.id,
+            current_daily_tickets: 0,
+            current_weekly_tickets: 0,
+            current_monthly_tickets: 0,
+            current_yearly_tickets: 0,
+            lifetime_daily_tickets: 0,
+            lifetime_weekly_tickets: 0,
+            lifetime_monthly_tickets: 0,
+            lifetime_yearly_tickets: 0,
+            daily_pull_count: 0,
+            daily_raffle_win_count: 0,
+            daily_reward_win_count: 0,
+            lifetime_pull_count: 0,
+            lifetime_raffle_win_count: 0,
+            lifetime_reward_win_count: 0,
+            total_sol_spent: 0,
+            total_reward_buybacks: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ]);
+
+      if (statsError) {
+        console.error('Stats initialization error:', statsError);
+        throw statsError;
+      }
+
+      // Create initial activity
+      const { error: activityError } = await supabase
+        .from('activities')
+        .insert([
+          {
+            user_id: currentUser.id,
+            type: 'profile_created',
+            details: {
+              message: 'Profile created successfully'
+            },
+            created_at: new Date().toISOString()
+          }
+        ]);
+
+      if (activityError) {
+        console.error('Activity creation error:', activityError);
+        // Don't throw here, as this is not critical
+      }
+
       // Update wallet context with new user data
       setUser({
         id: currentUser.id,

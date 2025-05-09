@@ -12,6 +12,7 @@ export interface Ticket {
   userId: number;
   type: 'daily' | 'weekly' | 'monthly' | 'yearly';
   quantity: number;
+  count: number;
   createdAt: string;
 }
 
