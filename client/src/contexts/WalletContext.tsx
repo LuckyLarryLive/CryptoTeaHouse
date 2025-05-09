@@ -143,7 +143,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
       return updatedUser;
     });
-  }, [user]); // Add user to dependencies to ensure we have latest state
+  }, []); // Remove user dependency to prevent stale closures
 
   // Log user state changes with more detail
   useEffect(() => {
@@ -546,7 +546,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = React.useMemo(() => ({
     user,
-    setUser: updateUser, // Use the enhanced updateUser function
+    setUser: updateUser,
     connect,
     disconnect,
     isConnecting,
@@ -554,7 +554,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     signTransaction,
     signAllTransactions,
     sendTransaction
-  }), [user, isConnecting, walletProvider, updateUser]);
+  }), [user, isConnecting, walletProvider, updateUser, connect, disconnect, signTransaction, signAllTransactions, sendTransaction]);
 
   // Log when the context value changes
   useEffect(() => {
