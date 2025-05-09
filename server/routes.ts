@@ -27,37 +27,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get user tickets
-  app.get("/api/tickets/user/:userId", async (req: Request, res: Response) => {
-    try {
-      const userId = req.params.userId;
-      
-      if (!userId) {
-        return res.status(400).json({ message: "Invalid user ID" });
-      }
-      
-      // Return empty array for now
-      return res.status(200).json([
-        { type: "daily", count: 0 },
-        { type: "weekly", count: 0 },
-        { type: "monthly", count: 0 },
-        { type: "yearly", count: 0 }
-      ]);
-    } catch (error) {
-      console.error("Get tickets error:", error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
+  // Get user tickets - Pure stub
+  app.get("/api/tickets/user/:userId", (req: Request, res: Response) => {
+    console.log('[API] Stub /api/tickets/user called');
+    return res.status(200).json([
+      { type: "daily", count: 0 },
+      { type: "weekly", count: 0 },
+      { type: "monthly", count: 0 },
+      { type: "yearly", count: 0 }
+    ]);
   });
   
-  // Get upcoming draws
-  app.get("/api/draws/upcoming", async (req: Request, res: Response) => {
-    try {
-      // Return empty array for now
-      return res.status(200).json([]);
-    } catch (error) {
-      console.error("Get upcoming draws error:", error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
+  // Get upcoming draws - Pure stub
+  app.get("/api/draws/upcoming", (req: Request, res: Response) => {
+    console.log('[API] Stub /api/draws/upcoming called');
+    return res.status(200).json([]);
+  });
+  
+  // Get user activities - Pure stub
+  app.get("/api/activities/user/:userId", (req: Request, res: Response) => {
+    console.log('[API] Stub /api/activities/user called');
+    return res.status(200).json([]);
   });
   
   // Pull lucky cat arm endpoint
@@ -118,33 +108,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get user activities
-  app.get("/api/activities/user/:userId", async (req: Request, res: Response) => {
-    try {
-      const userId = req.params.userId;
-      
-      if (!userId) {
-        return res.status(400).json({ message: "Invalid user ID" });
-      }
-      
-      // Return empty array for now
-      return res.status(200).json([]);
-    } catch (error) {
-      console.error("Get activities error:", error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
-  });
-  
-  // Get winners
-  app.get("/api/winners", async (req: Request, res: Response) => {
-    try {
-      const limit = Number(req.query.limit) || 10;
-      const winners = await storage.getWinners(limit);
-      return res.status(200).json(winners);
-    } catch (error) {
-      console.error("Get winners error:", error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
+  // Get winners - Pure stub
+  app.get("/api/winners", (req: Request, res: Response) => {
+    console.log('[API] Stub /api/winners called');
+    return res.status(200).json([]);
   });
 
   const httpServer = createServer(app);
