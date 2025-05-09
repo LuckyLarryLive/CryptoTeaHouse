@@ -166,14 +166,25 @@ export default function CompleteProfile() {
           const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
           const fileName = `${currentUser.id}/profile.${fileExt}`;
 
+          // Log upload options
+          const uploadOptions = {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: file.type
+          };
+          console.log('Storage upload options:', {
+            fileName,
+            options: uploadOptions,
+            fileType: file.type,
+            fileSize: file.size,
+            fileLastModified: file.lastModified,
+            supabaseVersion: '2.49.4'
+          });
+
           // Upload the file with explicit content type
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('profile-pictures')
-            .upload(fileName, file, {
-              cacheControl: '3600',
-              upsert: true,
-              contentType: file.type // Ensure we use the file's actual MIME type
-            });
+            .upload(fileName, file, uploadOptions);
 
           if (uploadError) {
             console.error('Upload error details:', uploadError);
