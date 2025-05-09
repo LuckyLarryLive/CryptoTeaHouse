@@ -7,29 +7,21 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 console.log('Supabase URL:', supabaseUrl);
 console.log('Supabase Anon Key exists:', !!supabaseAnonKey);
 
-if (!supabaseUrl) {
-  throw new Error('VITE_SUPABASE_URL is required. Please check your environment variables.');
-}
-
-if (!supabaseAnonKey) {
-  throw new Error('VITE_SUPABASE_ANON_KEY is required. Please check your environment variables.');
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
   },
   global: {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'X-Client-Info': 'supabase-js/2.0.0'
+      'Prefer': 'return=representation'
     }
-  },
-  db: {
-    schema: 'public'
   }
 });
 

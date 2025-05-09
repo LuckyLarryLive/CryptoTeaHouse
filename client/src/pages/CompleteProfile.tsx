@@ -221,6 +221,72 @@ export default function CompleteProfile() {
     }
   };
 
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+
+  const handleProfilePictureUpload = async (file: File) => {
+    try {
+      if (!user?.id) {
+        throw new Error('No user ID available');
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `profile.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(filePath, file, {
+          upsert: true,
+          cacheControl: '3600'
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(filePath);
+
+      console.log('Profile picture uploaded successfully:', publicUrl);
+
+      // Update profile with the new picture URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          profile_picture_url: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Error updating profile with picture URL:', updateError);
+        throw updateError;
+      }
+
+      // Update local state
+      setProfilePicture(publicUrl);
+      setUser({
+        ...user,
+        picture: publicUrl
+      });
+
+      toast({
+        title: "Success",
+        description: "Profile picture uploaded successfully",
+      });
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload profile picture",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-dark-900 to-dark-800 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
