@@ -143,8 +143,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           .from('users')
           .insert({
             id: authUser.id,
-            public_key: publicKey,
-            created_at: new Date().toISOString()
+            public_key: publicKey
           })
           .select()
           .single();
