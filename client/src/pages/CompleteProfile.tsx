@@ -124,14 +124,31 @@ export default function CompleteProfile() {
       if (formData.profilePicture) {
         const file = formData.profilePicture;
         
-        // Log file details before upload
-        console.log('File details before upload:', {
+        // Log detailed file information
+        console.log('File object details:', {
           name: file.name,
           type: file.type,
           size: file.size,
           lastModified: file.lastModified,
-          isFile: file instanceof File
+          isFile: file instanceof File,
+          constructor: file.constructor.name,
+          prototype: Object.getPrototypeOf(file).constructor.name,
+          hasOwnProperty: {
+            name: file.hasOwnProperty('name'),
+            type: file.hasOwnProperty('type'),
+            size: file.hasOwnProperty('size'),
+            lastModified: file.hasOwnProperty('lastModified')
+          }
         });
+
+        // Log the first few bytes of the file to verify content
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const arrayBuffer = e.target?.result;
+          const bytes = new Uint8Array(arrayBuffer as ArrayBuffer).slice(0, 16);
+          console.log('First 16 bytes of file:', Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' '));
+        };
+        reader.readAsArrayBuffer(file);
 
         try {
           // Validate file type
