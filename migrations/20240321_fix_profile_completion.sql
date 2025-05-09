@@ -12,6 +12,7 @@ DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
 DROP POLICY IF EXISTS "Users can insert their own profile" ON profiles;
 DROP POLICY IF EXISTS "User stats are viewable by owner" ON user_stats;
 DROP POLICY IF EXISTS "Users can insert their own stats" ON user_stats;
+DROP POLICY IF EXISTS "Users can update their own stats" ON user_stats;
 
 -- Create new policies for users table
 CREATE POLICY "Users can view their own data"
@@ -62,6 +63,12 @@ ON user_stats FOR INSERT
 TO authenticated
 WITH CHECK (user_id = auth.uid());
 
+CREATE POLICY "Users can update their own stats"
+ON user_stats FOR UPDATE
+TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
 -- Add comments to explain the policies
 COMMENT ON POLICY "Users can view their own data" ON users IS 'Allow users to read only their own data';
 COMMENT ON POLICY "Users can update their own data" ON users IS 'Allow users to update their own data';
@@ -71,6 +78,7 @@ COMMENT ON POLICY "Users can update their own profile" ON profiles IS 'Allow use
 COMMENT ON POLICY "Users can insert their own profile" ON profiles IS 'Allow users to create their own profile';
 COMMENT ON POLICY "User stats are viewable by owner" ON user_stats IS 'Allow users to view their own stats';
 COMMENT ON POLICY "Users can insert their own stats" ON user_stats IS 'Allow users to create their own stats';
+COMMENT ON POLICY "Users can update their own stats" ON user_stats IS 'Allow users to update their own stats';
 
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS users_public_key_idx ON users(public_key);

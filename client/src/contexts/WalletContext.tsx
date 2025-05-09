@@ -89,6 +89,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       const response = await walletToConnect.connect();
       const publicKey = response.publicKey.toString();
 
+      console.log('[WalletContext] Starting wallet connection process...', { publicKey });
+
       // Try to sign in first
       let { data: { user: authUser, session }, error: authError } = await supabase.auth.signInWithPassword({
         email: `${publicKey.toLowerCase()}@wallet.local`,
@@ -97,6 +99,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
       // If sign in fails with invalid credentials, try to sign up
       if (authError?.message?.includes('Invalid login credentials')) {
+        console.log('[WalletContext] Sign in failed, attempting sign up...');
         const { data: { user: newUser, session: newSession }, error: signUpError } = await supabase.auth.signUp({
           email: `${publicKey.toLowerCase()}@wallet.local`,
           password: publicKey,
@@ -113,13 +116,15 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         
         authUser = newUser;
         session = newSession;
+        console.log('[WalletContext] New user created:', newUser.id);
       } else if (authError) {
         throw authError;
       }
 
       if (!authUser) throw new Error('No user data received after authentication');
 
-      // Check if user record exists
+      // Create initial user record if it doesn't exist
+      console.log('[WalletContext] Checking for existing user record...');
       const { data: existingUser, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -127,36 +132,73 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         .single();
 
       if (userError && userError.code !== 'PGRST116') {
+        console.error('[WalletContext] Error checking user record:', userError);
         throw userError;
       }
 
       // Create user record if it doesn't exist
       if (!existingUser) {
+        console.log('[WalletContext] Creating initial user record...');
         const { data: newUser, error: createUserError } = await supabase
           .from('users')
           .insert({
             id: authUser.id,
             public_key: publicKey,
-            email: authUser.email,
             created_at: new Date().toISOString()
           })
           .select()
           .single();
 
-        if (createUserError) throw createUserError;
+        if (createUserError) {
+          console.error('[WalletContext] Error creating user record:', createUserError);
+          throw createUserError;
+        }
+        console.log('[WalletContext] Initial user record created successfully');
+      } else {
+        console.log('[WalletContext] Existing user record found');
+      }
+
+      // Wait for the user record to be available
+      console.log('[WalletContext] Verifying user record is accessible...');
+      let retries = 0;
+      let userRecord = null;
+      while (retries < 3) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+
+        if (!error && data) {
+          userRecord = data;
+          break;
+        }
+
+        console.log(`[WalletContext] Retry ${retries + 1} to fetch user record...`);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms between retries
+        retries++;
+      }
+
+      if (!userRecord) {
+        throw new Error('Failed to verify user record after creation');
       }
 
       // Check if profile exists
+      console.log('[WalletContext] Checking for existing profile...');
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
         .maybeSingle();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('[WalletContext] Error checking profile:', profileError);
+        throw profileError;
+      }
 
       // Create profile if it doesn't exist
       if (!existingProfile) {
+        console.log('[WalletContext] Creating initial profile...');
         const { data: newProfile, error: createProfileError } = await supabase
           .from('profiles')
           .insert({
@@ -171,7 +213,11 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           .select()
           .single();
 
-        if (createProfileError) throw createProfileError;
+        if (createProfileError) {
+          console.error('[WalletContext] Error creating profile:', createProfileError);
+          throw createProfileError;
+        }
+        console.log('[WalletContext] Initial profile created successfully');
 
         // Store temporary wallet data
         localStorage.setItem('tempWalletData', JSON.stringify({
@@ -189,6 +235,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         
         setLocation('/complete-profile');
       } else {
+        console.log('[WalletContext] Existing profile found');
         // Profile exists, set the user data
         setUser({
           id: existingProfile.id,
@@ -212,19 +259,18 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         }
       }
 
+      console.log('[WalletContext] Wallet connection process completed successfully');
       toast({
         title: "Connected",
         description: "Wallet connected successfully!",
       });
     } catch (error) {
-      if (error instanceof Error && !error.message?.includes("User rejected")) {
-        toast({
-          title: "Connection Failed",
-          description: error.message || "Failed to connect to wallet",
-          variant: "destructive",
-        });
-      }
-      throw error;
+      console.error('[WalletContext] Error during wallet connection:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to connect wallet",
+        variant: "destructive"
+      });
     } finally {
       setIsConnecting(false);
     }
