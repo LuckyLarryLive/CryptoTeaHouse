@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@/contexts/WalletContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, storageClient } from '@/lib/supabase';
 
 interface ProfileFormData {
   displayName: string;
@@ -198,7 +198,7 @@ export default function CompleteProfile() {
           });
 
           // Upload the file with explicit content type
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const { data: uploadData, error: uploadError } = await storageClient.storage
             .from('profile-pictures')
             .upload(fileName, file, uploadOptions);
 
@@ -208,7 +208,7 @@ export default function CompleteProfile() {
           }
 
           // Get the public URL
-          const { data: { publicUrl } } = supabase.storage
+          const { data: { publicUrl } } = storageClient.storage
             .from('profile-pictures')
             .getPublicUrl(fileName);
             
@@ -318,7 +318,7 @@ export default function CompleteProfile() {
       const filePath = `${user.id}/${fileName}`;
 
       // Upload file to storage with explicit content type
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await storageClient.storage
         .from('profile-pictures')
         .upload(filePath, file, {
           upsert: true,
@@ -332,7 +332,7 @@ export default function CompleteProfile() {
       }
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } } = storageClient.storage
         .from('profile-pictures')
         .getPublicUrl(filePath);
 

@@ -11,6 +11,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
+// Main Supabase client with global headers for API operations
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
@@ -21,6 +22,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       'Accept': 'application/json',
       'Prefer': 'return=representation'
     }
+  }
+});
+
+// Separate Supabase client for storage operations without global headers
+export const storageClient = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
   }
 });
 
