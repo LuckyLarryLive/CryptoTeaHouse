@@ -15,6 +15,10 @@
   ],
   "routes": [
     {
+      "src": "/functions/v1/(.*)",
+      "dest": "https://iyvtzkxikdrdskstfmdf.supabase.co/functions/v1/$1"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "server/index.ts"
     },
