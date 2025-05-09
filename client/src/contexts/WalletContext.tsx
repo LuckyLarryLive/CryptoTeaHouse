@@ -123,20 +123,15 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         return newUser;
       }
 
-      // For updates, explicitly handle is_profile_complete
-      const isProfileComplete = newUserData.is_profile_complete !== undefined 
-        ? newUserData.is_profile_complete 
-        : prevUser.is_profile_complete;
-
+      // For updates, ALWAYS use the new is_profile_complete value if provided
       const updatedUser: WalletUser = {
-        id: prevUser.id,
-        publicKey: prevUser.publicKey,
+        ...prevUser,
+        ...newUserData,
         provider: 'wallet' as const,
-        is_profile_complete: isProfileComplete,
-        email: newUserData.email ?? prevUser.email,
-        username: newUserData.username ?? prevUser.username,
-        name: newUserData.name ?? prevUser.name,
-        picture: newUserData.picture ?? prevUser.picture
+        // Explicitly set is_profile_complete to the new value if provided
+        is_profile_complete: newUserData.is_profile_complete !== undefined 
+          ? newUserData.is_profile_complete 
+          : prevUser.is_profile_complete
       };
 
       console.log('[WalletContext] setUser callback - user updated:', {
@@ -148,7 +143,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
       return updatedUser;
     });
-  }, []);
+  }, [user]); // Add user to dependencies to ensure we have latest state
 
   // Log user state changes with more detail
   useEffect(() => {
