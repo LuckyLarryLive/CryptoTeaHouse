@@ -75,6 +75,9 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   const isConnectingRef = React.useRef(false);
   isConnectingRef.current = isConnecting;
 
+  // Use ref to track listener instance
+  const listenerInstanceRef = React.useRef<number>(0);
+
   // Log user state changes with more detail
   useEffect(() => {
     console.log('[WalletContext] User state changed:', {
@@ -88,30 +91,34 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
   // Check for any Supabase auth state changes - setup once on mount
   useEffect(() => {
-    console.log('[WalletContext] Setting up Supabase auth listener');
+    // Increment instance counter
+    const instanceId = ++listenerInstanceRef.current;
+    console.log(`[WalletContext] Setting up Supabase auth listener (instance ${instanceId})`);
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       // CRITICAL: This must be the absolute first line in the callback
+      // No async operations or promises before this check
       if (isConnectingRef.current) {
-        console.log('[WalletContext] Active connection in progress, auth listener is passive, returning immediately');
+        console.log(`[WalletContext] Instance ${instanceId}: Active connection in progress, auth listener is passive, returning immediately`);
         return;
       }
 
       // Only proceed with any other logic if we're not connecting
-      console.log('[WalletContext] Auth state changed:', {
+      console.log(`[WalletContext] Instance ${instanceId}: Auth state changed:`, {
         event,
         hasSession: !!session,
         currentUser: user,
         isProfileComplete: user?.is_profile_complete,
+        isConnecting: isConnectingRef.current,
         stack: new Error().stack
       });
 
       if (event === 'SIGNED_OUT') {
-        console.log('[WalletContext] User signed out, clearing state');
+        console.log(`[WalletContext] Instance ${instanceId}: User signed out, clearing state`);
         setUser(null);
         setWalletProvider(null);
       } else if (event === 'SIGNED_IN' && session?.user) {
-        console.log('[WalletContext] User signed in, checking profile:', {
+        console.log(`[WalletContext] Instance ${instanceId}: User signed in, checking profile:`, {
           hasExistingUser: !!user,
           existingUserId: user?.id,
           sessionUserId: session.user.id,
@@ -120,7 +127,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
         // Only proceed if we don't have a user or if the session user is different
         if (!user || user.id !== session.user.id) {
-          console.log('[WalletContext] No matching user in context, fetching profile');
+          console.log(`[WalletContext] Instance ${instanceId}: No matching user in context, fetching profile`);
           try {
             const { data: profile, error } = await supabase
               .from('profiles')
@@ -129,12 +136,12 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
               .single();
 
             if (error) {
-              console.error('[WalletContext] Error fetching profile:', error);
+              console.error(`[WalletContext] Instance ${instanceId}: Error fetching profile:`, error);
               return;
             }
 
             if (profile) {
-              console.log('[WalletContext] Found profile:', {
+              console.log(`[WalletContext] Instance ${instanceId}: Found profile:`, {
                 profileId: profile.id,
                 isProfileComplete: profile.is_profile_complete,
                 existingUserState: user
@@ -144,7 +151,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
               if (!user || 
                   user.id !== profile.id || 
                   user.is_profile_complete !== profile.is_profile_complete) {
-                console.log('[WalletContext] Updating user state with profile data');
+                console.log(`[WalletContext] Instance ${instanceId}: Updating user state with profile data`);
                 setUser({
                   id: profile.id,
                   publicKey: profile.auth_provider_id,
@@ -156,22 +163,22 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
                   is_profile_complete: profile.is_profile_complete
                 });
               } else {
-                console.log('[WalletContext] Profile data matches current user state, skipping update');
+                console.log(`[WalletContext] Instance ${instanceId}: Profile data matches current user state, skipping update`);
               }
             } else {
-              console.log('[WalletContext] No profile found for session user');
+              console.log(`[WalletContext] Instance ${instanceId}: No profile found for session user`);
             }
           } catch (error) {
-            console.error('[WalletContext] Error in profile fetch:', error);
+            console.error(`[WalletContext] Instance ${instanceId}: Error in profile fetch:`, error);
           }
         } else {
-          console.log('[WalletContext] User already exists in context with matching ID, skipping profile fetch');
+          console.log(`[WalletContext] Instance ${instanceId}: User already exists in context with matching ID, skipping profile fetch`);
         }
       }
     });
 
     return () => {
-      console.log('[WalletContext] Cleaning up Supabase auth listener');
+      console.log(`[WalletContext] Cleaning up Supabase auth listener (instance ${instanceId})`);
       subscription.unsubscribe();
     };
   }, []); // Empty dependency array - setup once on mount
