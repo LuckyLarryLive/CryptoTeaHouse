@@ -7,7 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import LuckyCat from "@/components/LuckyCat";
 import { Activity, Ticket } from "@/types";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// Use relative paths for API calls
+const API_BASE = '/api';
 
 interface NextDraw {
   type: string;
@@ -20,6 +21,17 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
+  // Log initial user state
+  useEffect(() => {
+    console.log('[Dashboard] Initial user state:', {
+      hasUser: !!user,
+      userId: user?.id,
+      isProfileComplete: user?.is_profile_complete,
+      userData: user,
+      userStateString: JSON.stringify(user, null, 2)
+    });
+  }, []);
+
   // Fetch user tickets
   const {
     data: tickets = [],
@@ -29,9 +41,16 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: [`/api/user/${user?.id}/tickets`],
     queryFn: async () => {
-      const response = await fetch(`${API_URL}/tickets/user/${user?.id}`);
-      if (!response.ok) throw new Error('Failed to fetch tickets');
-      return response.json();
+      console.log('[Dashboard] Fetching tickets for user:', user?.id);
+      const response = await fetch(`${API_BASE}/tickets/user/${user?.id}`);
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('[Dashboard] Error fetching tickets:', error);
+        throw new Error('Failed to fetch tickets');
+      }
+      const data = await response.json();
+      console.log('[Dashboard] Tickets fetched successfully:', data);
+      return data;
     },
     enabled: !!user?.id,
     retry: 1
@@ -45,9 +64,16 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: ['/api/draws/upcoming'],
     queryFn: async () => {
-      const response = await fetch(`${API_URL}/draws/upcoming`);
-      if (!response.ok) throw new Error('Failed to fetch draws');
-      return response.json();
+      console.log('[Dashboard] Fetching upcoming draws');
+      const response = await fetch(`${API_BASE}/draws/upcoming`);
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('[Dashboard] Error fetching draws:', error);
+        throw new Error('Failed to fetch draws');
+      }
+      const data = await response.json();
+      console.log('[Dashboard] Draws fetched successfully:', data);
+      return data;
     },
     enabled: !!user?.id,
     retry: 1
@@ -62,9 +88,16 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: [`/api/user/${user?.id}/activities`],
     queryFn: async () => {
-      const response = await fetch(`${API_URL}/activities/user/${user?.id}`);
-      if (!response.ok) throw new Error('Failed to fetch activities');
-      return response.json();
+      console.log('[Dashboard] Fetching activities for user:', user?.id);
+      const response = await fetch(`${API_BASE}/activities/user/${user?.id}`);
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('[Dashboard] Error fetching activities:', error);
+        throw new Error('Failed to fetch activities');
+      }
+      const data = await response.json();
+      console.log('[Dashboard] Activities fetched successfully:', data);
+      return data;
     },
     enabled: !!user?.id,
     retry: 1
@@ -76,7 +109,8 @@ export default function Dashboard() {
       hasUser: !!user,
       userId: user?.id,
       isProfileComplete: user?.is_profile_complete,
-      userData: user
+      userData: user,
+      userStateString: JSON.stringify(user, null, 2)
     });
   }, [user]);
 
@@ -88,9 +122,12 @@ export default function Dashboard() {
       drawsLoading,
       hasTickets: tickets.length > 0,
       hasActivities: activities.length > 0,
-      hasDraws: nextDraws.length > 0
+      hasDraws: nextDraws.length > 0,
+      ticketsError,
+      activitiesError,
+      drawsError
     });
-  }, [ticketsLoading, activitiesLoading, drawsLoading, tickets, activities, nextDraws]);
+  }, [ticketsLoading, activitiesLoading, drawsLoading, tickets, activities, nextDraws, ticketsError, activitiesError, drawsError]);
 
   // Handle errors
   useEffect(() => {
