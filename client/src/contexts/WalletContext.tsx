@@ -71,13 +71,14 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   const [walletProvider, setWalletProvider] = useState<PhantomWallet | null>(null);
   const { toast } = useToast();
 
-  // Log user state changes
+  // Log user state changes with more detail
   useEffect(() => {
     console.log('[WalletContext] User state changed:', {
       hasUser: !!user,
       userId: user?.id,
       isProfileComplete: user?.is_profile_complete,
-      userData: user
+      userData: user,
+      stack: new Error().stack // This will help us see where the state change originated
     });
   }, [user]);
 
@@ -86,7 +87,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     console.log('[WalletContext] updateUser called with:', {
       newUser,
       currentUser: user,
-      isProfileComplete: newUser?.is_profile_complete
+      isProfileComplete: newUser?.is_profile_complete,
+      stack: new Error().stack // This will help us see where updateUser was called from
     });
 
     setUser((prevUser) => {
@@ -375,6 +377,81 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
     }
   };
 
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo(() => ({
+    user,
+    setUser: updateUser,
+    connect,
+    disconnect,
+    isConnecting,
+    walletProvider,
+    signTransaction,
+    signAllTransactions,
+    sendTransaction
+  }), [user, isConnecting, walletProvider]);
+
+  // Log when the context value changes
+  useEffect(() => {
+    console.log('[WalletContext] Context value changed:', {
+      hasUser: !!contextValue.user,
+      isProfileComplete: contextValue.user?.is_profile_complete,
+      isConnecting: contextValue.isConnecting,
+      hasWalletProvider: !!contextValue.walletProvider
+    });
+  }, [contextValue]);
+
+  // Check for any Supabase auth state changes
+  useEffect(() => {
+    console.log('[WalletContext] Setting up Supabase auth listener');
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[WalletContext] Auth state changed:', {
+        event,
+        hasSession: !!session,
+        currentUser: user,
+        isProfileComplete: user?.is_profile_complete
+      });
+
+      if (event === 'SIGNED_OUT') {
+        console.log('[WalletContext] User signed out, clearing state');
+        setUser(null);
+        setWalletProvider(null);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        console.log('[WalletContext] User signed in, checking profile');
+        // Only fetch profile if we don't already have user data
+        if (!user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile) {
+            console.log('[WalletContext] Found profile:', {
+              profile,
+              isProfileComplete: profile.is_profile_complete
+            });
+            setUser({
+              id: profile.id,
+              publicKey: profile.auth_provider_id,
+              email: profile.email,
+              username: profile.display_name,
+              name: profile.display_name,
+              picture: profile.profile_picture_url,
+              provider: 'wallet',
+              is_profile_complete: profile.is_profile_complete
+            });
+          }
+        }
+      }
+    });
+
+    return () => {
+      console.log('[WalletContext] Cleaning up Supabase auth listener');
+      subscription.unsubscribe();
+    };
+  }, []); // Empty dependency array since we only want to set up the listener once
+
   // Clean up temporary wallet data on unmount
   useEffect(() => {
     return () => {
@@ -389,17 +466,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   }, []);
 
   return (
-    <WalletContext.Provider value={{ 
-      user, 
-      setUser: updateUser, 
-      connect, 
-      disconnect,
-      isConnecting,
-      walletProvider,
-      signTransaction,
-      signAllTransactions,
-      sendTransaction
-    }}>
+    <WalletContext.Provider value={contextValue}>
       {children}
     </WalletContext.Provider>
   );
