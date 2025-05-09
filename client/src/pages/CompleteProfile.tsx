@@ -104,10 +104,15 @@ export default function CompleteProfile() {
 
     try {
       setIsLoading(true);
+      console.log('Starting profile completion...', {
+        publicKey: user.publicKey,
+        email: formData.email
+      });
 
       // Get the current user
       let { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
       if (userError || !currentUser) {
+        console.log('No existing auth session, attempting sign in...');
         // If no auth session, try to sign in with the wallet
         const { data: { user: authUser, session }, error: signInError } = await supabase.auth.signInWithPassword({
           email: `${user.publicKey.toLowerCase()}@wallet.local`,
@@ -115,6 +120,7 @@ export default function CompleteProfile() {
         });
 
         if (signInError || !authUser) {
+          console.log('Sign in failed, creating new user...');
           // If sign in fails, create a new user
           const { data: { user: newUser }, error: createError } = await supabase.auth.signUp({
             email: `${user.publicKey.toLowerCase()}@wallet.local`,
@@ -126,15 +132,36 @@ export default function CompleteProfile() {
           }
 
           currentUser = newUser;
+          console.log('New user created:', currentUser.id);
         } else {
           currentUser = authUser;
+          console.log('Existing user found:', currentUser.id);
         }
       }
+
+      // Update or create user record
+      console.log('Updating user record...');
+      const { error: userUpdateError } = await supabase
+        .from('users')
+        .upsert({
+          id: currentUser.id,
+          public_key: user.publicKey,
+          email: formData.email,
+          last_login_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        });
+
+      if (userUpdateError) {
+        console.error('Error updating user record:', userUpdateError);
+        throw new Error("Failed to update user record");
+      }
+      console.log('User record updated successfully');
 
       // Handle profile picture upload if selected
       let profilePictureUrl: string | undefined = undefined;
       if (formData.profilePicture) {
         try {
+          console.log('Uploading profile picture...');
           const file = formData.profilePicture;
           const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
           const fileName = `${currentUser.id}/profile.${fileExt}`;
@@ -151,8 +178,9 @@ export default function CompleteProfile() {
           const { data: { publicUrl } } = storageClient.storage
             .from('profile-pictures')
             .getPublicUrl(fileName);
-            
+          
           profilePictureUrl = publicUrl;
+          console.log('Profile picture uploaded successfully:', publicUrl);
         } catch (error) {
           console.error('Error uploading profile picture:', error);
           toast({
@@ -164,6 +192,7 @@ export default function CompleteProfile() {
       }
 
       // Create profile
+      console.log('Creating profile...');
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert([
@@ -183,13 +212,16 @@ export default function CompleteProfile() {
         ]);
 
       if (profileError) {
+        console.error('Error creating profile:', profileError);
         throw profileError;
       }
+      console.log('Profile created successfully');
 
-      // Initialize user stats
-      const { error: statsError } = await supabase
-        .from('user_stats')
-        .upsert([
+      // Wait for all operations to complete
+      console.log('Initializing user data...');
+      await Promise.all([
+        // Initialize user stats
+        supabase.from('user_stats').upsert([
           {
             user_id: currentUser.id,
             current_daily_tickets: 0,
@@ -211,16 +243,9 @@ export default function CompleteProfile() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
-        ]);
-
-      if (statsError) {
-        throw new Error('Failed to initialize user stats');
-      }
-
-      // Create initial activity
-      const { error: activityError } = await supabase
-        .from('activities')
-        .insert([
+        ]),
+        // Create initial activity
+        supabase.from('activities').insert([
           {
             user_id: currentUser.id,
             type: 'profile_created',
@@ -229,11 +254,9 @@ export default function CompleteProfile() {
             },
             created_at: new Date().toISOString()
           }
-        ]);
-
-      if (activityError) {
-        throw new Error('Failed to create initial activity');
-      }
+        ])
+      ]);
+      console.log('User data initialized successfully');
 
       // Update wallet context with new user data
       setUser({
@@ -249,6 +272,7 @@ export default function CompleteProfile() {
       // Clean up temporary data
       localStorage.removeItem('tempWalletData');
 
+      console.log('Profile completion finished successfully');
       toast({
         title: "Success",
         description: "Profile created successfully!"
