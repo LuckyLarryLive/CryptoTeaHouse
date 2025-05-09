@@ -147,9 +147,15 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         .eq('id', authUser.id)
         .single();
 
-      if (userError && userError.code !== 'PGRST116') {
-        console.error("Error checking user record:", JSON.stringify(userError, null, 2));
-        throw userError;
+      if (userError) {
+        if (userError.code === 'PGRST116') {
+          // Record not found, proceed with creation
+          console.log("[WalletContext] No existing user record found, creating new one...");
+        } else {
+          // Other error occurred
+          console.error("Error checking user record:", JSON.stringify(userError, null, 2));
+          throw userError;
+        }
       }
 
       // Create user record if it doesn't exist
@@ -181,9 +187,15 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         .eq('id', authUser.id)
         .single();
 
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error("Error checking profile:", JSON.stringify(profileError, null, 2));
-        throw profileError;
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          // Record not found, proceed with creation
+          console.log("[WalletContext] No existing profile found, creating new one...");
+        } else {
+          // Other error occurred
+          console.error("Error checking profile:", JSON.stringify(profileError, null, 2));
+          throw profileError;
+        }
       }
 
       // Create profile if it doesn't exist

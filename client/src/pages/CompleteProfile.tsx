@@ -37,18 +37,40 @@ export default function CompleteProfile() {
       return false;
     }
     setHandleChecking(true);
-    const { data: existing, error } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('handle', handle)
-      .single();
-    setHandleChecking(false);
-    if (existing) {
-      setHandleError('This handle is already taken.');
+    try {
+      const { data: existing, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('handle', handle)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Handle is available
+          setHandleError(null);
+          return true;
+        } else {
+          // Other error occurred
+          console.error('Error checking handle:', error);
+          setHandleError('Error checking handle availability. Please try again.');
+          return false;
+        }
+      }
+
+      if (existing) {
+        setHandleError('This handle is already taken.');
+        return false;
+      }
+
+      setHandleError(null);
+      return true;
+    } catch (error) {
+      console.error('Error validating handle:', error);
+      setHandleError('Error checking handle availability. Please try again.');
       return false;
+    } finally {
+      setHandleChecking(false);
     }
-    setHandleError(null);
-    return true;
   };
 
   useEffect(() => {
