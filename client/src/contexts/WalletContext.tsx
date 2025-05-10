@@ -582,24 +582,20 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       userStateString: JSON.stringify(user, null, 2)
     };
 
+    // CRITICAL: Log the exact state being used for the context value
     console.log('[WalletContext] Creating new context value:', {
       ...valueToProvide,
       userData: undefined, // Avoid logging full userData again since it's in userStateString
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      userState: {
+        id: user?.id,
+        isProfileComplete: user?.is_profile_complete,
+        fullState: JSON.stringify(user, null, 2)
+      }
     });
 
     return valueToProvide;
-  }, [
-    user, // CRITICAL: user state must be a dependency
-    isConnecting,
-    walletProvider,
-    updateUser,
-    connect,
-    disconnect,
-    signTransaction,
-    signAllTransactions,
-    sendTransaction
-  ]);
+  }, [user, isConnecting, walletProvider]); // Only depend on state values, not functions
 
   // Log when the context value changes
   useEffect(() => {
@@ -609,7 +605,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       isConnecting: contextValue.isConnecting,
       hasWalletProvider: !!contextValue.walletProvider,
       userStateString: JSON.stringify(contextValue.user, null, 2),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      stack: new Error().stack // Add stack trace to see where this is triggered
     });
   }, [contextValue]);
 
