@@ -16,24 +16,26 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[80vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <LuckyCatVideo />
-        </div>
-        
-        <div className="relative z-10 text-center px-4">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Welcome to Crypto Tea House
-          </h1>
-          <p className="text-xl md:text-2xl text-light-300 mb-8 max-w-2xl mx-auto">
-            Pull the lucky cat's arm and win SOL prizes! Join our community of tea enthusiasts and crypto lovers.
-          </p>
-          <Button 
-            onClick={handleConnectWallet}
-            className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold px-8 py-6 text-lg"
-          >
-            Connect Wallet to Start
-          </Button>
+      <section className="relative h-[80vh] flex items-center overflow-hidden">
+        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div className="relative z-10 text-left">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Welcome to Crypto Tea House
+            </h1>
+            <p className="text-xl md:text-2xl text-light-300 mb-8 max-w-2xl">
+              Pull the lucky cat's arm and win SOL prizes! Join our community of tea enthusiasts and crypto lovers.
+            </p>
+            <Button 
+              onClick={handleConnectWallet}
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold px-8 py-6 text-lg"
+            >
+              Connect Wallet to Start
+            </Button>
+          </div>
+          
+          <div className="relative z-0">
+            <LuckyCatVideo />
+          </div>
         </div>
       </section>
 

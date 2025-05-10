@@ -3,11 +3,24 @@ import { useWallet } from "@/contexts/WalletContext";
 import { Button } from "@/components/ui/button";
 import LuckyCatVideo from "@/components/LuckyCatVideo";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function TeaHouse() {
   const { user, walletProvider } = useWallet();
   const { toast } = useToast();
   const [isPulling, setIsPulling] = useState(false);
+  const [selectedPulls, setSelectedPulls] = useState("1");
+
+  const pullOptions = [
+    { value: "1", label: "1 Pull" },
+    { value: "5", label: "5 Pulls" },
+    { value: "10", label: "10 Pulls" },
+    { value: "25", label: "25 Pulls" },
+    { value: "50", label: "50 Pulls" },
+    { value: "100", label: "100 Pulls" },
+    { value: "250", label: "250 Pulls" },
+    { value: "500", label: "500 Pulls" },
+  ];
 
   const handlePull = async () => {
     if (!user || !walletProvider) {
@@ -52,6 +65,23 @@ export default function TeaHouse() {
     }
   };
 
+  const handlePurchasePulls = async () => {
+    if (!user || !walletProvider) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // TODO: Implement purchase logic
+    toast({
+      title: "Coming Soon",
+      description: "Purchase functionality will be available soon!",
+    });
+  };
+
   return (
     <div className="min-h-screen pt-20">
       <div className="container mx-auto px-4">
@@ -67,34 +97,82 @@ export default function TeaHouse() {
           </div>
 
           {/* Lucky Cat Section */}
-          <div className="relative bg-dark-800 rounded-2xl overflow-hidden shadow-2xl mb-12">
+          <div className="bg-dark-800 rounded-2xl overflow-hidden shadow-2xl mb-12">
             <div className="aspect-video relative">
               <LuckyCatVideo />
             </div>
-            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-dark-900 to-transparent">
-              <Button
-                onClick={handlePull}
-                disabled={isPulling}
-                className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold py-6 text-lg"
-              >
-                {isPulling ? "Pulling..." : "Pull Lucky Cat's Arm"}
-              </Button>
+          </div>
+
+          {/* Pull Controls Section */}
+          <div className="bg-dark-800 rounded-2xl p-6 mb-12">
+            <div className="space-y-6">
+              {/* Free Daily Pull */}
+              <div>
+                <Button
+                  onClick={handlePull}
+                  disabled={isPulling}
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-dark-900 font-semibold py-6 text-lg"
+                >
+                  {isPulling ? "Pulling..." : "Free Daily Pull"}
+                </Button>
+              </div>
+
+              {/* Purchase Additional Pulls */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Select value={selectedPulls} onValueChange={setSelectedPulls}>
+                    <SelectTrigger className="w-[200px] bg-dark-700 border-dark-600">
+                      <SelectValue placeholder="Select number of pulls" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-dark-700 border-dark-600">
+                      {pullOptions.map((option) => (
+                        <SelectItem 
+                          key={option.value} 
+                          value={option.value}
+                          className={`${
+                            parseInt(option.value) > 100 
+                              ? 'text-accent hover:text-accent/80' 
+                              : parseInt(option.value) > 25 
+                                ? 'text-secondary hover:text-secondary/80'
+                                : 'text-primary hover:text-primary/80'
+                          }`}
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={handlePurchasePulls}
+                    className="flex-1 bg-gradient-to-r from-secondary to-accent hover:opacity-90 text-dark-900 font-semibold py-6 text-lg"
+                  >
+                    Purchase Pulls
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Stats Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div className="bg-dark-800 rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-2">Daily Pulls</h3>
-              <p className="text-3xl font-bold text-primary">1/1</p>
-            </div>
-            <div className="bg-dark-800 rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-2">Tickets</h3>
-              <p className="text-3xl font-bold text-secondary">0</p>
-            </div>
-            <div className="bg-dark-800 rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-2">Winnings</h3>
-              <p className="text-3xl font-bold text-accent">0 SOL</p>
+          {/* Drawing Entries Section */}
+          <div className="bg-dark-800 rounded-2xl p-6 mb-12">
+            <h2 className="text-2xl font-bold mb-6">Drawing Entries</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-dark-700 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-2">Daily</h3>
+                <p className="text-3xl font-bold text-primary">1/1</p>
+              </div>
+              <div className="bg-dark-700 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-2">Weekly</h3>
+                <p className="text-3xl font-bold text-secondary">0</p>
+              </div>
+              <div className="bg-dark-700 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-2">Monthly</h3>
+                <p className="text-3xl font-bold text-accent">0</p>
+              </div>
+              <div className="bg-dark-700 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-2">Yearly</h3>
+                <p className="text-3xl font-bold text-amber-400">0</p>
+              </div>
             </div>
           </div>
         </div>
