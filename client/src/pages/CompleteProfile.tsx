@@ -20,6 +20,7 @@ export default function CompleteProfile() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string>('');
+  const [submissionSuccessful, setSubmissionSuccessful] = useState(false);
   const [formData, setFormData] = useState<ProfileFormData>({
     displayName: '',
     handle: '',
@@ -90,6 +91,23 @@ export default function CompleteProfile() {
     // Set wallet address from temporary data
     setWalletAddress(data.publicKey);
   }, []);
+
+  // Add effect to handle navigation after successful submission
+  useEffect(() => {
+    if (submissionSuccessful && user?.is_profile_complete === true) {
+      console.log('[CompleteProfile] Navigation effect triggered:', {
+        submissionSuccessful,
+        isProfileComplete: user.is_profile_complete,
+        userState: JSON.stringify(user, null, 2)
+      });
+      
+      // Clean up temporary data
+      localStorage.removeItem('tempWalletData');
+      
+      // Navigate to dashboard
+      setLocation('/dashboard');
+    }
+  }, [submissionSuccessful, user, setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -277,18 +295,15 @@ export default function CompleteProfile() {
       });
       
       setUser(updatedUser);
+      setSubmissionSuccessful(true); // Set flag after state update
       
-      console.log('[CompleteProfile] User state updated');
-
-      // Clean up temporary data
-      localStorage.removeItem('tempWalletData');
+      console.log('[CompleteProfile] User state updated and submission marked successful');
 
       console.log('Profile completion finished successfully');
       toast({
         title: "Success",
         description: "Profile created successfully!"
       });
-      setLocation('/dashboard');
     } catch (error) {
       console.error("Error creating profile:", error);
       toast({
