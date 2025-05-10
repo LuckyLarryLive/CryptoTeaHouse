@@ -234,10 +234,11 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
                     existingUserState: user
                   });
 
-                  // Only update if the profile data is different from current user state
+                  // CRITICAL CHANGE: Only update if we don't have a user or if the profile data is different
+                  // AND the current user doesn't have is_profile_complete set to true
                   if (!user || 
-                      user.id !== profile.id || 
-                      user.is_profile_complete !== profile.is_profile_complete) {
+                      (user.id !== profile.id) || 
+                      (user.is_profile_complete !== profile.is_profile_complete && !user.is_profile_complete)) {
                     console.log(`[WalletContext] Instance ${instanceId}: Updating user state with profile data`);
                     setUser({
                       id: profile.id,
@@ -250,7 +251,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
                       is_profile_complete: profile.is_profile_complete
                     });
                   } else {
-                    console.log(`[WalletContext] Instance ${instanceId}: Profile data matches current user state, skipping update`);
+                    console.log(`[WalletContext] Instance ${instanceId}: Skipping profile update - preserving client state`);
                   }
                 } else {
                   console.log(`[WalletContext] Instance ${instanceId}: No profile found for session user`);
