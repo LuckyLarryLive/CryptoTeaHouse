@@ -29,6 +29,10 @@ function AppRoutes() {
   const protectedRoutes = ['/dashboard', '/preferences'];
   const isProtectedRoute = protectedRoutes.includes(location);
 
+  // Define public routes that don't require authentication
+  const publicRoutes = ['/', '/winners', '/how-it-works', '/tokenomics', '/roadmap', '/legal'];
+  const isPublicRoute = publicRoutes.includes(location);
+
   useEffect(() => {
     console.log('[RouteGuard] State:', {
       isConnected: !!walletProvider,
@@ -36,6 +40,7 @@ function AppRoutes() {
       isProfileComplete: user?.is_profile_complete,
       currentLocation: location,
       isProtectedRoute,
+      isPublicRoute,
       userData: user,
       userStateString: JSON.stringify(user, null, 2),
       userStateDetails: user ? {
@@ -54,30 +59,31 @@ function AppRoutes() {
       return;
     }
 
-    if (!user) {
-      console.log('[RouteGuard] No user in context, redirecting to home');
+    // Only check user authentication for protected routes
+    if (isProtectedRoute && !user) {
+      console.log('[RouteGuard] Protected route accessed without user, redirecting to home');
       setLocation('/');
       return;
     }
 
-    if (location === '/dashboard' && !user.is_profile_complete) {
+    if (location === '/dashboard' && !user?.is_profile_complete) {
       console.log('[RouteGuard] Profile incomplete, redirecting to complete-profile. User state:', {
-        userId: user.id,
-        isProfileComplete: user.is_profile_complete,
+        userId: user?.id,
+        isProfileComplete: user?.is_profile_complete,
         userData: user,
         userStateString: JSON.stringify(user, null, 2),
-        userStateDetails: {
+        userStateDetails: user ? {
           id: user.id,
           isProfileComplete: user.is_profile_complete,
           provider: user.provider,
           hasUsername: !!user.username,
           hasEmail: !!user.email
-        }
+        } : null
       });
       setLocation('/complete-profile');
       return;
     }
-  }, [walletProvider, user, location, isProtectedRoute]);
+  }, [walletProvider, user, location, isProtectedRoute, isPublicRoute]);
 
   return (
     <Switch>
