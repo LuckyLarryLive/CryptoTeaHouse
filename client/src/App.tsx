@@ -25,12 +25,17 @@ function AppRoutes() {
 
   const isConnected = !!user && !!walletProvider;
 
+  // Define protected routes that require wallet connection
+  const protectedRoutes = ['/dashboard', '/preferences'];
+  const isProtectedRoute = protectedRoutes.includes(location);
+
   useEffect(() => {
     console.log('[RouteGuard] State:', {
       isConnected: !!walletProvider,
       hasUser: !!user,
       isProfileComplete: user?.is_profile_complete,
       currentLocation: location,
+      isProtectedRoute,
       userData: user,
       userStateString: JSON.stringify(user, null, 2),
       userStateDetails: user ? {
@@ -42,8 +47,9 @@ function AppRoutes() {
       } : null
     });
 
-    if (!walletProvider) {
-      console.log('[RouteGuard] No wallet provider, redirecting to home');
+    // Only check wallet provider for protected routes
+    if (isProtectedRoute && !walletProvider) {
+      console.log('[RouteGuard] Protected route accessed without wallet provider, redirecting to home');
       setLocation('/');
       return;
     }
@@ -71,7 +77,7 @@ function AppRoutes() {
       setLocation('/complete-profile');
       return;
     }
-  }, [walletProvider, user, location]);
+  }, [walletProvider, user, location, isProtectedRoute]);
 
   return (
     <Switch>
