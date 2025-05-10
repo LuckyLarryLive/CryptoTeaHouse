@@ -88,6 +88,7 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       timestamp: new Date().toISOString()
     });
 
+    // Use a synchronous state update to ensure immediate reflection
     setUser(prevUser => {
       console.log('[WalletContext] setUser callback - previous state:', {
         prevUser,
@@ -591,7 +592,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         id: user?.id,
         isProfileComplete: user?.is_profile_complete,
         fullState: JSON.stringify(user, null, 2)
-      }
+      },
+      stack: new Error().stack // Add stack trace to see where this is triggered
     });
 
     return valueToProvide;
