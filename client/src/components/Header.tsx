@@ -13,7 +13,7 @@ export default function Header() {
   const [isSignUp, setIsSignUp] = useState(false);
   
   const navItems = [
-    { name: "Tea House", path: "/" },
+    { name: "Tea House", path: "/tea-house", protected: true },
     { name: "Winners", path: "/winners" },
     { name: "How it Works", path: "/how-it-works" },
     { name: "Tokenomics", path: "/tokenomics" },
@@ -49,34 +49,38 @@ export default function Header() {
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-8">
               {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  className={`text-sm font-medium transition-colors whitespace-nowrap ${
-                    isActive(item.path)
-                      ? "text-primary"
-                      : "text-light-300 hover:text-light-100"
-                  }`}
-                >
-                  {item.name}
-                </Link>
+                (!item.protected || isConnected) && (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className={`text-sm font-medium transition-colors whitespace-nowrap ${
+                      isActive(item.path)
+                        ? "text-primary"
+                        : "text-light-300 hover:text-light-100"
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                )
               ))}
             </nav>
 
             {/* Tablet Navigation */}
             <nav className="hidden md:flex lg:hidden items-center space-x-4">
               {navItems.slice(0, 3).map((item) => (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  className={`text-xs font-medium transition-colors whitespace-nowrap ${
-                    isActive(item.path)
-                      ? "text-primary"
-                      : "text-light-300 hover:text-light-100"
-                  }`}
-                >
-                  {item.name}
-                </Link>
+                (!item.protected || isConnected) && (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className={`text-xs font-medium transition-colors whitespace-nowrap ${
+                      isActive(item.path)
+                        ? "text-primary"
+                        : "text-light-300 hover:text-light-100"
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                )
               ))}
             </nav>
 
@@ -104,17 +108,19 @@ export default function Header() {
                 <SheetContent side="right" className="bg-dark-900 border-l border-dark-800">
                   <nav className="flex flex-col space-y-4 mt-8">
                     {navItems.map((item) => (
-                      <Link
-                        key={item.path}
-                        href={item.path}
-                        className={`text-sm font-medium transition-colors ${
-                          isActive(item.path)
-                            ? "text-primary"
-                            : "text-light-300 hover:text-light-100"
-                        }`}
-                      >
-                        {item.name}
-                      </Link>
+                      (!item.protected || isConnected) && (
+                        <Link
+                          key={item.path}
+                          href={item.path}
+                          className={`text-sm font-medium transition-colors ${
+                            isActive(item.path)
+                              ? "text-primary"
+                              : "text-light-300 hover:text-light-100"
+                          }`}
+                        >
+                          {item.name}
+                        </Link>
+                      )
                     ))}
                     {!isConnected && (
                       <div className="flex flex-col gap-2">

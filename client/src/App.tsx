@@ -18,6 +18,7 @@ import Footer from "@/components/Footer";
 import AgeVerification from "@/components/AgeVerification";
 import CompleteProfile from '@/pages/CompleteProfile';
 import Preferences from '@/pages/Preferences';
+import TeaHouse from "@/pages/TeaHouse";
 
 function AppRoutes() {
   const [location, setLocation] = useLocation();
@@ -26,7 +27,7 @@ function AppRoutes() {
   const isConnected = !!user && !!walletProvider;
 
   // Define protected routes that require wallet connection
-  const protectedRoutes = ['/dashboard', '/preferences'];
+  const protectedRoutes = ['/tea-house', '/dashboard', '/preferences'];
   const isProtectedRoute = protectedRoutes.includes(location);
 
   // Define public routes that don't require authentication
@@ -66,7 +67,7 @@ function AppRoutes() {
       return;
     }
 
-    if (location === '/dashboard' && !user?.is_profile_complete) {
+    if (location === '/tea-house' && !user?.is_profile_complete) {
       console.log('[RouteGuard] Profile incomplete, redirecting to complete-profile. User state:', {
         userId: user?.id,
         isProfileComplete: user?.is_profile_complete,
@@ -88,6 +89,7 @@ function AppRoutes() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/tea-house" component={TeaHouse} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/complete-profile" component={CompleteProfile} />
       <Route path="/preferences" component={Preferences} />
