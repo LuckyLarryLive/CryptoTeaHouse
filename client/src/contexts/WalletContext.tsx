@@ -6,7 +6,7 @@ import { useLocation } from "wouter";
 
 type WalletProviderType = 'phantom';
 
-interface WalletUser {
+export interface WalletUser {
   id: string;
   publicKey: string;
   email?: string;
@@ -84,14 +84,16 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       newUserData,
       currentUser: user,
       isProfileComplete: newUserData?.is_profile_complete,
-      newUserDataString: JSON.stringify(newUserData, null, 2)
+      newUserDataString: JSON.stringify(newUserData, null, 2),
+      timestamp: new Date().toISOString()
     });
 
     setUser(prevUser => {
       console.log('[WalletContext] setUser callback - previous state:', {
         prevUser,
         isProfileComplete: prevUser?.is_profile_complete,
-        prevUserString: JSON.stringify(prevUser, null, 2)
+        prevUserString: JSON.stringify(prevUser, null, 2),
+        timestamp: new Date().toISOString()
       });
 
       if (newUserData === null) {
@@ -118,7 +120,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
         console.log('[WalletContext] setUser callback - new user created:', {
           newUser,
           isProfileComplete: newUser.is_profile_complete,
-          newUserString: JSON.stringify(newUser, null, 2)
+          newUserString: JSON.stringify(newUser, null, 2),
+          timestamp: new Date().toISOString()
         });
         return newUser;
       }
@@ -134,11 +137,14 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
           : prevUser.is_profile_complete
       };
 
-      console.log('[WalletContext] setUser callback - user updated:', {
+      // CRITICAL: Log the exact object being returned as new state
+      console.log('[WalletContext] setUser callback - FINAL state update:', {
         updatedUser,
         isProfileComplete: updatedUser.is_profile_complete,
         updatedUserString: JSON.stringify(updatedUser, null, 2),
-        wasProfileCompleteUpdated: newUserData.is_profile_complete !== undefined
+        wasProfileCompleteUpdated: newUserData.is_profile_complete !== undefined,
+        timestamp: new Date().toISOString(),
+        stack: new Error().stack // Log the call stack to see where this update originated
       });
 
       return updatedUser;
@@ -153,7 +159,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       isProfileComplete: user?.is_profile_complete,
       userData: user,
       userStateString: JSON.stringify(user, null, 2),
-      stack: new Error().stack
+      stack: new Error().stack,
+      timestamp: new Date().toISOString()
     });
   }, [user]);
 
@@ -544,17 +551,26 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
   };
 
   // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = React.useMemo(() => ({
-    user,
-    setUser: updateUser,
-    connect,
-    disconnect,
-    isConnecting,
-    walletProvider,
-    signTransaction,
-    signAllTransactions,
-    sendTransaction
-  }), [user, isConnecting, walletProvider, updateUser, connect, disconnect, signTransaction, signAllTransactions, sendTransaction]);
+  const contextValue = React.useMemo(() => {
+    console.log('[WalletContext] Creating new context value:', {
+      hasUser: !!user,
+      isProfileComplete: user?.is_profile_complete,
+      userStateString: JSON.stringify(user, null, 2),
+      timestamp: new Date().toISOString()
+    });
+
+    return {
+      user,
+      setUser: updateUser,
+      connect,
+      disconnect,
+      isConnecting,
+      walletProvider,
+      signTransaction,
+      signAllTransactions,
+      sendTransaction
+    };
+  }, [user, isConnecting, walletProvider, updateUser, connect, disconnect, signTransaction, signAllTransactions, sendTransaction]);
 
   // Log when the context value changes
   useEffect(() => {
@@ -563,7 +579,8 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       isProfileComplete: contextValue.user?.is_profile_complete,
       isConnecting: contextValue.isConnecting,
       hasWalletProvider: !!contextValue.walletProvider,
-      userStateString: JSON.stringify(contextValue.user, null, 2)
+      userStateString: JSON.stringify(contextValue.user, null, 2),
+      timestamp: new Date().toISOString()
     });
   }, [contextValue]);
 

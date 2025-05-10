@@ -3,9 +3,8 @@ import { Route, Switch, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WalletProvider } from "@/contexts/WalletContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { useWallet } from "@/contexts/WalletContext";
+import { WalletProvider, useWallet } from "@/contexts/WalletContext";
+import type { WalletUser } from "@/contexts/WalletContext";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -93,13 +92,20 @@ const RouteGuard = ({ children }: { children: React.ReactNode }) => {
   const { user } = useWallet();
   const [location, setLocation] = useLocation();
   const [isChecking, setIsChecking] = useState(true);
+  const [lastUserState, setLastUserState] = useState<WalletUser | null>(null);
 
   useEffect(() => {
+    // Store the last known user state
+    if (user) {
+      setLastUserState(user);
+    }
+
     console.log('[RouteGuard] Checking route access:', {
       currentLocation: location,
       hasUser: !!user,
       userId: user?.id,
       isProfileComplete: user?.is_profile_complete,
+      lastKnownIsProfileComplete: lastUserState?.is_profile_complete,
       userData: user,
       userStateString: JSON.stringify(user, null, 2),
       timestamp: new Date().toISOString()
@@ -107,27 +113,30 @@ const RouteGuard = ({ children }: { children: React.ReactNode }) => {
 
     // Add a small delay to allow context updates to propagate
     const timer = setTimeout(() => {
-      if (!user) {
+      // Use the most recent state we have
+      const currentUser = user || lastUserState;
+      
+      if (!currentUser) {
         console.log('[RouteGuard] No user, redirecting to login');
         setLocation('/login');
-      } else if (!user.is_profile_complete && location !== '/complete-profile') {
+      } else if (!currentUser.is_profile_complete && location !== '/complete-profile') {
         console.log('[RouteGuard] Profile incomplete, redirecting to complete-profile:', {
           currentLocation: location,
-          isProfileComplete: user.is_profile_complete,
-          userData: user,
-          userStateString: JSON.stringify(user, null, 2),
+          isProfileComplete: currentUser.is_profile_complete,
+          userData: currentUser,
+          userStateString: JSON.stringify(currentUser, null, 2),
           timestamp: new Date().toISOString()
         });
         setLocation('/complete-profile');
-      } else if (user.is_profile_complete && location === '/complete-profile') {
+      } else if (currentUser.is_profile_complete && location === '/complete-profile') {
         console.log('[RouteGuard] Profile complete, redirecting to dashboard');
         setLocation('/dashboard');
       }
       setIsChecking(false);
-    }, 50); // Small delay to allow context updates
+    }, 100); // Increased delay to ensure state propagation
 
     return () => clearTimeout(timer);
-  }, [user, location, setLocation]);
+  }, [user, location, setLocation, lastUserState]);
 
   if (isChecking) {
     return (
