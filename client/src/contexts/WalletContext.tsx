@@ -552,15 +552,9 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = React.useMemo(() => {
-    console.log('[WalletContext] Creating new context value:', {
-      hasUser: !!user,
-      isProfileComplete: user?.is_profile_complete,
-      userStateString: JSON.stringify(user, null, 2),
-      timestamp: new Date().toISOString()
-    });
-
-    return {
-      user,
+    // Create the value object with the current user state
+    const valueToProvide = {
+      user, // This is the current user state from useState
       setUser: updateUser,
       connect,
       disconnect,
@@ -568,9 +562,31 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
       walletProvider,
       signTransaction,
       signAllTransactions,
-      sendTransaction
+      sendTransaction,
+      // Add derived values for easier debugging
+      hasUser: !!user,
+      isProfileComplete: user?.is_profile_complete,
+      userStateString: JSON.stringify(user, null, 2)
     };
-  }, [user, isConnecting, walletProvider, updateUser, connect, disconnect, signTransaction, signAllTransactions, sendTransaction]);
+
+    console.log('[WalletContext] Creating new context value:', {
+      ...valueToProvide,
+      userData: undefined, // Avoid logging full userData again since it's in userStateString
+      timestamp: new Date().toISOString()
+    });
+
+    return valueToProvide;
+  }, [
+    user, // CRITICAL: user state must be a dependency
+    isConnecting,
+    walletProvider,
+    updateUser,
+    connect,
+    disconnect,
+    signTransaction,
+    signAllTransactions,
+    sendTransaction
+  ]);
 
   // Log when the context value changes
   useEffect(() => {
