@@ -209,8 +209,15 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
               hasExistingUser: !!user,
               existingUserId: user?.id,
               sessionUserId: session.user.id,
-              isProfileComplete: user?.is_profile_complete
+              isProfileComplete: user?.is_profile_complete,
+              currentUserState: JSON.stringify(user, null, 2)
             });
+
+            // CRITICAL: If we have a user with is_profile_complete: true, DO NOT fetch from DB
+            if (user?.is_profile_complete === true) {
+              console.log(`[WalletContext] Instance ${instanceId}: User has is_profile_complete: true, preserving state`);
+              return;
+            }
 
             // Only proceed if we don't have a user or if the session user is different
             if (!user || user.id !== session.user.id) {
@@ -231,11 +238,16 @@ export function WalletProvider({ children }: WalletContextProviderProps) {
                   console.log(`[WalletContext] Instance ${instanceId}: Found profile:`, {
                     profileId: profile.id,
                     isProfileComplete: profile.is_profile_complete,
-                    existingUserState: user
+                    existingUserState: JSON.stringify(user, null, 2)
                   });
 
-                  // CRITICAL CHANGE: Only update if we don't have a user or if the profile data is different
-                  // AND the current user doesn't have is_profile_complete set to true
+                  // CRITICAL: Never overwrite is_profile_complete: true
+                  if (user?.is_profile_complete === true) {
+                    console.log(`[WalletContext] Instance ${instanceId}: Preserving is_profile_complete: true state`);
+                    return;
+                  }
+
+                  // Only update if we don't have a user or if the profile data is different
                   if (!user || 
                       (user.id !== profile.id) || 
                       (user.is_profile_complete !== profile.is_profile_complete && !user.is_profile_complete)) {
